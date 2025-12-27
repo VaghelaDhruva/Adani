@@ -1,0 +1,36 @@
+# Non-secret configuration for the Clinker Supply Chain Optimization System
+
+# Time bucketing
+time_bucket:
+  default_freq: "W"  # pandas offset: D=daily, W=weekly, M=monthly
+  start_date: "2025-01-01"
+  end_date: "2025-12-31"
+
+# Units and defaults
+units:
+  mass: "tonnes"
+  currency: "USD"
+  distance: "km"
+
+# Solver defaults
+solver:
+  default: "cbc"
+  time_limit_seconds: 600
+  mip_gap: 0.01
+
+# Routing defaults
+routing:
+  default_provider: "auto"
+  cache_ttl_hours: 24
+  max_retries: 3
+  timeout_seconds: 10
+
+# Demand streaming defaults
+demand_streaming:
+  default_interval_seconds: 300
+  batch_size: 100
+
+# Logging
+logging:
+  level: "INFO"
+  format: "json"  # "json" or "text"
