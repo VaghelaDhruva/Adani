@@ -1,4 +1,5 @@
 from sqlalchemy import Column, Integer, String, Float, DateTime
+from datetime import datetime
 
 from app.db.base import Base
 
@@ -12,5 +13,5 @@ class SafetyStockPolicy(Base):
     policy_value = Column(Float, nullable=False)  # e.g., 7 days, 0.15 (15%), 500 tonnes
     safety_stock_tonnes = Column(Float)  # computed after demand is known
     max_inventory_tonnes = Column(Float)  # optional capacity limit
-    created_at = Column(DateTime, server_default="now()")
-    updated_at = Column(DateTime, server_default="now()", onupdate="now()")
+    created_at = Column(DateTime, default=datetime.utcnow)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)

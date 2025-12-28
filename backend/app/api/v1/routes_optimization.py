@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException, BackgroundTasks
 from sqlalchemy.orm import Session
 from typing import Dict, Any
 
-from app.db.base import get_db
+from app.core.deps import get_db
 from app.schemas.kpi import OptimizationResult
 
 router = APIRouter()

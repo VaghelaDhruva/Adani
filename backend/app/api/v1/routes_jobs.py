@@ -5,7 +5,7 @@ from fastapi import APIRouter, HTTPException, Depends
 from sqlalchemy.orm import Session
 import logging
 
-from app.db.base import get_db
+from app.core.deps import get_db
 from app.services.audit_service import audit_timer
 from app.services.job_queue import celery_app, run_scenarios_task
 from app.services.scenarios.scenario_generator import ScenarioConfig

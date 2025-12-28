@@ -5,7 +5,7 @@ import logging
 
 import pandas as pd
 
-from app.db.base import get_db
+from app.core.deps import get_db
 from app.db.models import (
     PlantMaster,
     ProductionCapacityCost,

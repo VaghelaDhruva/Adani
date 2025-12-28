@@ -5,8 +5,9 @@ from typing import Any, Dict, List
 import requests
 import streamlit as st
 
+from config import API_BASE
+
 # --- Configuration ---------------------------------------------------------
-API_BASE = st.secrets.get("api_base_url", "http://localhost:8000")
 SCENARIOS_URL = f"{API_BASE}/api/v1/scenarios/run"
 
 

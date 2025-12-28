@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException, UploadFile, File, Query
 from sqlalchemy.orm import Session
 from typing import List, Optional
 
-from app.db.base import get_db
+from app.core.deps import get_db
 from app.services.ingestion.csv_ingestion import ingest_csv
 from app.services.ingestion.excel_ingestion import ingest_excel
 from app.utils.exceptions import DataValidationError

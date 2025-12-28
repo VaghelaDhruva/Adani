@@ -4,7 +4,7 @@ import logging
 from sqlalchemy.orm import Session
 
 from app.core.config import get_settings
-from app.db.base import SessionLocal
+from app.db.session import SessionLocal
 from app.api.v1.routes_scenarios import _load_optimization_data
 from app.services.audit_service import audit_timer
 from app.services.scenarios.scenario_generator import ScenarioConfig

@@ -77,9 +77,52 @@ def extract_solution(model) -> Dict[str, Any]:
 			for i in model.I
 			for t in model.T
 		)
+		
+		# Penalty costs (if penalty variables exist)
+		penalty_costs = {}
+		total_penalty_cost = 0.0
+		
+		if hasattr(model, 'unmet_demand'):
+			unmet_demand_cost = sum(
+				float(value(model.unmet_demand[j, t])) * 1000.0  # Default penalty rate
+				for j in model.J
+				for t in model.T
+			)
+			penalty_costs["unmet_demand_penalty"] = unmet_demand_cost
+			total_penalty_cost += unmet_demand_cost
+		
+		if hasattr(model, 'ss_violation'):
+			ss_violation_cost = sum(
+				float(value(model.ss_violation[i, t])) * 100.0  # Default penalty rate
+				for i in model.I
+				for t in model.T
+			)
+			penalty_costs["safety_stock_violation_penalty"] = ss_violation_cost
+			total_penalty_cost += ss_violation_cost
+		
+		if hasattr(model, 'cap_violation'):
+			cap_violation_cost = sum(
+				float(value(model.cap_violation[i, t])) * 200.0  # Default penalty rate
+				for i in model.I
+				for t in model.T
+			)
+			penalty_costs["capacity_violation_penalty"] = cap_violation_cost
+			total_penalty_cost += cap_violation_cost
 
 		objective_val = float(value(model.total_cost)) if hasattr(model, "total_cost") else None
-		total_cost = prod_cost + trans_cost + fixed_trip_cost + holding_cost
+		total_cost = prod_cost + trans_cost + fixed_trip_cost + holding_cost + total_penalty_cost
+
+		costs = {
+			"production_cost": prod_cost,
+			"transport_cost": trans_cost,
+			"fixed_trip_cost": fixed_trip_cost,
+			"holding_cost": holding_cost,
+		}
+		
+		# Add penalty costs if they exist
+		if penalty_costs:
+			costs.update(penalty_costs)
+			costs["total_penalty_cost"] = total_penalty_cost
 
 		return {
 			"production": production,
@@ -87,13 +130,8 @@ def extract_solution(model) -> Dict[str, Any]:
 			"inventory": inventory,
 			"trips": trips,
 			"objective": objective_val,
-			"cost_breakdown": {
-				"total_cost": total_cost,
-				"production_cost": prod_cost,
-				"transport_cost": trans_cost,
-				"fixed_trip_cost": fixed_trip_cost,
-				"holding_cost": holding_cost,
-			},
+			"costs": costs,
+			"total_cost": total_cost,
 		}
 	except Exception as e:
 		raise OptimizationError(f"Failed to extract solution: {e}")

@@ -1,4 +1,4 @@
-from typing import Any, Dict, Iterable, List, Tuple
+from typing import Any, Dict, Iterable, List, Tuple, Optional
 
 import pandas as pd
 from pyomo.environ import (
@@ -38,7 +38,7 @@ def _ordered_unique(values: Iterable[Any]) -> List[Any]:
     return ordered
 
 
-def build_clinker_model(data: Dict[str, Any]) -> ConcreteModel:
+def build_clinker_model(data: Dict[str, Any], penalty_config: Optional[Dict[str, float]] = None) -> ConcreteModel:
     """Build the MILP model for clinker supply chain optimization.
 
     Parameters
@@ -253,6 +253,15 @@ def build_clinker_model(data: Dict[str, Any]) -> ConcreteModel:
     m.use_mode = Var(m.R, m.T, domain=Binary)
     # Inventory at plants per period
     m.inv = Var(m.I, m.T, domain=NonNegativeReals)
+    
+    # Penalty variables (if penalty_config provided)
+    if penalty_config:
+        # Unmet demand variables
+        m.unmet_demand = Var(m.J, m.T, domain=NonNegativeReals)
+        # Safety stock violation variables
+        m.ss_violation = Var(m.I, m.T, domain=NonNegativeReals)
+        # Capacity violation variables
+        m.cap_violation = Var(m.I, m.T, domain=NonNegativeReals)
 
     # --- Constraints -------------------------------------------------------------
 
@@ -286,14 +295,17 @@ def build_clinker_model(data: Dict[str, Any]) -> ConcreteModel:
 
     m.max_inventory = Constraint(m.I, m.T, rule=max_inventory_rule)
 
-    # Demand satisfaction per customer & period
+    # Demand satisfaction per customer & period (with penalty variables)
     def demand_satisfaction_rule(_m, j, t):
         inbound = sum(
             _m.ship[i, j2, mode, t]
             for (i, j2, mode) in _m.R
             if j2 == j
         )
-        return inbound == _m.demand[j, t]
+        if penalty_config:
+            return inbound + _m.unmet_demand[j, t] == _m.demand[j, t]
+        else:
+            return inbound == _m.demand[j, t]
 
     m.demand_satisfaction = Constraint(m.J, m.T, rule=demand_satisfaction_rule)
 
@@ -314,6 +326,20 @@ def build_clinker_model(data: Dict[str, Any]) -> ConcreteModel:
         return _m.ship[i, j, mode, t] <= big_m * _m.use_mode[i, j, mode, t]
 
     m.sbq_upper = Constraint(m.R, m.T, rule=sbq_upper_rule)
+
+    # --- Penalty constraints (if penalty_config provided) ----------------------
+    if penalty_config:
+        # Safety stock violation constraints
+        def safety_stock_violation_rule(_m, i, t):
+            return _m.inv[i, t] + _m.ss_violation[i, t] >= _m.ss[i]
+
+        m.safety_stock_violation = Constraint(m.I, m.T, rule=safety_stock_violation_rule)
+
+        # Capacity violation constraints
+        def capacity_violation_rule(_m, i, t):
+            return _m.prod[i, t] <= _m.cap[i, t] + _m.cap_violation[i, t]
+
+        m.capacity_violation = Constraint(m.I, m.T, rule=capacity_violation_rule)
 
     # --- Objective: minimize total cost -----------------------------------------
     def total_cost_rule(_m):
@@ -337,7 +363,41 @@ def build_clinker_model(data: Dict[str, Any]) -> ConcreteModel:
             for i in _m.I
             for t in _m.T
         )
-        return prod_cost_total + trans_cost_total + fixed_trip_total + holding_cost_total
+        
+        # Add penalty costs if configured
+        penalty_total = 0.0
+        if penalty_config:
+            # Unmet demand penalty
+            unmet_demand_penalty = penalty_config.get("unmet_demand", 0)
+            if unmet_demand_penalty > 0:
+                unmet_demand = sum(
+                    _m.unmet_demand[j, t] * unmet_demand_penalty
+                    for j in _m.J
+                    for t in _m.T
+                )
+                penalty_total += unmet_demand
+            
+            # Safety stock violation penalty
+            ss_violation_penalty = penalty_config.get("safety_stock_violation", 0)
+            if ss_violation_penalty > 0:
+                ss_violations = sum(
+                    _m.ss_violation[i, t] * ss_violation_penalty
+                    for i in _m.I
+                    for t in _m.T
+                )
+                penalty_total += ss_violations
+            
+            # Capacity violation penalty
+            cap_violation_penalty = penalty_config.get("capacity_violation", 0)
+            if cap_violation_penalty > 0:
+                cap_violations = sum(
+                    _m.cap_violation[i, t] * cap_violation_penalty
+                    for i in _m.I
+                    for t in _m.T
+                )
+                penalty_total += cap_violations
+        
+        return prod_cost_total + trans_cost_total + fixed_trip_total + holding_cost_total + penalty_total
 
     m.total_cost = Objective(rule=total_cost_rule, sense=minimize)
 

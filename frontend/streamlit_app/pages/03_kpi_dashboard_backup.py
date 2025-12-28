@@ -84,56 +84,6 @@ def safe_get_list(container, key) -> list:
     return val if isinstance(val, list) else []
 
 
-def format_inr(value) -> str:
-    """Safely format a value as Indian Rupees with lakh/crore grouping.
-
-    Handles None, strings, floats, ints and always returns a safe string
-    like "₹ 0.00".
-    """
-    try:
-        if value is None:
-            return "₹ 0.00"
-
-        amount = float(value)
-        negative = amount < 0
-        amount = abs(amount)
-
-        integer_part = int(amount)
-        decimal_part = f"{amount:.2f}".split(".")[1]
-
-        s = str(integer_part)
-        if len(s) > 3:
-            last3 = s[-3:]
-            rest = s[:-3]
-            parts = []
-            while len(rest) > 2:
-                parts.insert(0, rest[-2:])
-                rest = rest[:-2]
-            if rest:
-                parts.insert(0, rest)
-            grouped = ",".join(parts) + "," + last3
-        else:
-            grouped = s
-
-        formatted = f"₹ {grouped}.{decimal_part}"
-        return f"-{formatted}" if negative else formatted
-    except (ValueError, TypeError):
-        return "₹ 0.00"
-
-
-def format_currency(value):
-    """Format currency value safely in Indian Rupees (INR)."""
-    return format_inr(value)
-
-
-def format_percentage(value):
-    """Format percentage safely."""
-    try:
-        return f"{value:.1%}"
-    except (ValueError, TypeError):
-        return "0.0%"
-
-
 def validate_kpi_schema(kpis: dict) -> tuple[bool, list[str]]:
     """Validate KPI payload schema and return (is_valid, error_messages)."""
     errors = []
@@ -252,8 +202,11 @@ def get_safe_kpi_value(value, default=0):
 
 
 def format_currency(value):
-    """Format currency value safely in Indian Rupees (INR)."""
-    return format_inr(value)
+    """Format currency value safely."""
+    try:
+        return f"${value:,.0f}"
+    except (ValueError, TypeError):
+        return "$0"
 
 
 def format_percentage(value):

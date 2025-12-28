@@ -1,4 +1,5 @@
 from sqlalchemy import Column, Integer, String, Float, DateTime, ForeignKey
+from datetime import datetime
 
 from app.db.base import Base
 
@@ -13,5 +14,5 @@ class ProductionCapacityCost(Base):
     variable_cost_per_tonne = Column(Float, nullable=False)
     fixed_cost_per_period = Column(Float, default=0.0)
     min_run_level = Column(Float, default=0.0)
-    created_at = Column(DateTime, server_default="now()")
-    updated_at = Column(DateTime, server_default="now()", onupdate="now()")
+    created_at = Column(DateTime, default=datetime.utcnow)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)

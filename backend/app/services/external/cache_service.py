@@ -1,7 +1,8 @@
 from typing import Optional, Dict, Any
 from sqlalchemy.orm import Session
 
-from app.db.base import Base, engine
+from app.db.base import Base
+from app.db.session import engine
 from sqlalchemy import Column, String, Float, DateTime, Text
 from datetime import datetime, timedelta
 
