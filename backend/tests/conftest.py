@@ -5,6 +5,7 @@ from sqlalchemy.orm import sessionmaker
 
 from app.main import app
 from app.db.base import Base, get_db
+from app.db import models  # ensure all models (including transport_lookup) are registered before create_all
 
 # Test in-memory SQLite
 SQLALCHEMY_DATABASE_URL = "sqlite:///./test.db"
@@ -14,6 +15,7 @@ TestingSessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engin
 
 @pytest.fixture(scope="session")
 def db():
+    # Create all tables for the test database once per test session
     Base.metadata.create_all(bind=engine)
     yield
     Base.metadata.drop_all(bind=engine)

@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, Float, DateTime, ForeignKey
+from sqlalchemy import Column, Integer, String, Float, DateTime, ForeignKey, text
 
 from app.db.base import Base
 
@@ -18,5 +18,5 @@ class TransportRoutesModes(Base):
     min_batch_quantity_tonnes = Column(Float, default=0.0)
     lead_time_days = Column(Float)
     is_active = Column(String, default="Y")
-    created_at = Column(DateTime, server_default="now()")
-    updated_at = Column(DateTime, server_default="now()", onupdate="now()")
+    created_at = Column(DateTime, server_default=text("CURRENT_TIMESTAMP"))
+    updated_at = Column(DateTime, server_default=text("CURRENT_TIMESTAMP"), onupdate=text("CURRENT_TIMESTAMP"))

@@ -1,17 +1,20 @@
 import pandas as pd
-from typing import Dict, Any
+from typing import Dict, Any, Optional
 from fastapi import UploadFile
 from sqlalchemy.orm import Session
 
 from app.utils.exceptions import DataValidationError
+from app.services.ingestion.tabular_ingestion import ingest_dataframe
 
 
-async def ingest_excel(file: UploadFile, table_name: str, db: Session) -> Dict[str, Any]:
+async def ingest_excel(file: UploadFile, db: Session, table_name: Optional[str] = None) -> Dict[str, Any]:
+    """Ingest an Excel file into the appropriate logical table.
+
+    Reads the uploaded Excel file into a pandas DataFrame and delegates to the
+    generic tabular ingestion pipeline.
     """
-    Generic Excel ingestion stub.
-    Later: detect sheets, map columns, validate, and bulk-insert.
-    """
-    if not (file.filename.endswith(".xlsx") or file.filename.endswith(".xls")):
+    fname = file.filename.lower()
+    if not (fname.endswith(".xlsx") or fname.endswith(".xls")):
         raise DataValidationError("Only Excel files (.xlsx/.xls) are supported")
 
     try:
@@ -23,5 +26,4 @@ async def ingest_excel(file: UploadFile, table_name: str, db: Session) -> Dict[s
     if df.empty:
         raise DataValidationError("Excel file is empty or unreadable")
 
-    # TODO: map columns, validate with Pydantic, and bulk-insert via SQLAlchemy
-    return {"filename": file.filename, "rows_loaded": len(df), "table": table_name}
+    return ingest_dataframe(df=df, db=db, filename=file.filename, explicit_table_name=table_name)

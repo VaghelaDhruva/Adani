@@ -1,0 +1,80 @@
+============================= test session starts ==============================
+platform darwin -- Python 3.13.7, pytest-9.0.2, pluggy-1.6.0 -- /Users/dhruva/Desktop/Adani/backend/.venv/bin/python
+cachedir: .pytest_cache
+rootdir: /Users/dhruva/Desktop/Adani/backend
+plugins: anyio-4.12.0, asyncio-1.3.0, Faker-39.0.0
+asyncio: mode=Mode.STRICT, debug=False, asyncio_default_fixture_loop_scope=None, asyncio_default_test_loop_scope=function
+collecting ... collected 1 item
+
+tests/test_api/test_routing_cache.py::test_route_cache_miss_and_store ERROR
+
+==================================== ERRORS ====================================
+______________ ERROR at setup of test_route_cache_miss_and_store _______________
+file /Users/dhruva/Desktop/Adani/backend/tests/test_api/test_routing_cache.py, line 12
+  def test_route_cache_miss_and_store(client, db_session, mocker):
+E       fixture 'mocker' not found
+>       available fixtures: _class_scoped_runner, _function_scoped_runner, _module_scoped_runner, _package_scoped_runner, _session_faker, _session_scoped_runner, anyio_backend, anyio_backend_name, anyio_backend_options, cache, capfd, capfdbinary, caplog, capsys, capsysbinary, capteesys, client, db, db_session, doctest_namespace, event_loop_policy, faker, free_tcp_port, free_tcp_port_factory, free_udp_port, free_udp_port_factory, monkeypatch, pytestconfig, record_property, record_testsuite_property, record_xml_attribute, recwarn, subtests, tmp_path, tmp_path_factory, tmpdir, tmpdir_factory, unused_tcp_port, unused_tcp_port_factory, unused_udp_port, unused_udp_port_factory
+>       use 'pytest --fixtures [testpath]' for help on them.
+
+/Users/dhruva/Desktop/Adani/backend/tests/test_api/test_routing_cache.py:12
+=============================== warnings summary ===============================
+app/core/config.py:15
+  /Users/dhruva/Desktop/Adani/backend/app/core/config.py:15: PydanticDeprecatedSince20: Using extra keyword arguments on `Field` is deprecated and will be removed. Use `json_schema_extra` instead. (Extra keys: 'env'). Deprecated in Pydantic V2.0 to be removed in V3.0. See Pydantic V2 Migration Guide at https://errors.pydantic.dev/2.12/migration/
+    DATABASE_URL: str = Field(..., env="DATABASE_URL")
+
+app/core/config.py:18
+  /Users/dhruva/Desktop/Adani/backend/app/core/config.py:18: PydanticDeprecatedSince20: Using extra keyword arguments on `Field` is deprecated and will be removed. Use `json_schema_extra` instead. (Extra keys: 'env'). Deprecated in Pydantic V2.0 to be removed in V3.0. See Pydantic V2 Migration Guide at https://errors.pydantic.dev/2.12/migration/
+    JWT_SECRET_KEY: str = Field(..., env="JWT_SECRET_KEY")
+
+app/core/config.py:41
+  /Users/dhruva/Desktop/Adani/backend/app/core/config.py:41: PydanticDeprecatedSince20: Using extra keyword arguments on `Field` is deprecated and will be removed. Use `json_schema_extra` instead. (Extra keys: 'env'). Deprecated in Pydantic V2.0 to be removed in V3.0. See Pydantic V2 Migration Guide at https://errors.pydantic.dev/2.12/migration/
+    BROKER_URL: str = Field(..., env="BROKER_URL")
+
+app/core/config.py:42
+  /Users/dhruva/Desktop/Adani/backend/app/core/config.py:42: PydanticDeprecatedSince20: Using extra keyword arguments on `Field` is deprecated and will be removed. Use `json_schema_extra` instead. (Extra keys: 'env'). Deprecated in Pydantic V2.0 to be removed in V3.0. See Pydantic V2 Migration Guide at https://errors.pydantic.dev/2.12/migration/
+    RESULT_BACKEND: str = Field(..., env="RESULT_BACKEND")
+
+app/core/config.py:8
+  /Users/dhruva/Desktop/Adani/backend/app/core/config.py:8: PydanticDeprecatedSince20: Support for class-based `config` is deprecated, use ConfigDict instead. Deprecated in Pydantic V2.0 to be removed in V3.0. See Pydantic V2 Migration Guide at https://errors.pydantic.dev/2.12/migration/
+    class Settings(BaseSettings):
+
+app/db/base.py:12
+  /Users/dhruva/Desktop/Adani/backend/app/db/base.py:12: MovedIn20Warning: The ``declarative_base()`` function is now available as sqlalchemy.orm.declarative_base(). (deprecated since: 2.0) (Background on SQLAlchemy 2.0 at: https://sqlalche.me/e/b8d9)
+    Base = declarative_base()
+
+app/schemas/plant.py:28
+  /Users/dhruva/Desktop/Adani/backend/app/schemas/plant.py:28: PydanticDeprecatedSince20: Support for class-based `config` is deprecated, use ConfigDict instead. Deprecated in Pydantic V2.0 to be removed in V3.0. See Pydantic V2 Migration Guide at https://errors.pydantic.dev/2.12/migration/
+    class PlantMaster(PlantMasterBase):
+
+app/schemas/demand.py:27
+  /Users/dhruva/Desktop/Adani/backend/app/schemas/demand.py:27: PydanticDeprecatedSince20: Support for class-based `config` is deprecated, use ConfigDict instead. Deprecated in Pydantic V2.0 to be removed in V3.0. See Pydantic V2 Migration Guide at https://errors.pydantic.dev/2.12/migration/
+    class DemandForecast(DemandForecastBase):
+
+app/schemas/transport.py:34
+  /Users/dhruva/Desktop/Adani/backend/app/schemas/transport.py:34: PydanticDeprecatedSince20: Support for class-based `config` is deprecated, use ConfigDict instead. Deprecated in Pydantic V2.0 to be removed in V3.0. See Pydantic V2 Migration Guide at https://errors.pydantic.dev/2.12/migration/
+    class TransportRoute(TransportRouteBase):
+
+app/schemas/inventory.py:24
+  /Users/dhruva/Desktop/Adani/backend/app/schemas/inventory.py:24: PydanticDeprecatedSince20: Support for class-based `config` is deprecated, use ConfigDict instead. Deprecated in Pydantic V2.0 to be removed in V3.0. See Pydantic V2 Migration Guide at https://errors.pydantic.dev/2.12/migration/
+    class SafetyStockPolicy(SafetyStockPolicyBase):
+
+app/schemas/inventory.py:45
+  /Users/dhruva/Desktop/Adani/backend/app/schemas/inventory.py:45: PydanticDeprecatedSince20: Support for class-based `config` is deprecated, use ConfigDict instead. Deprecated in Pydantic V2.0 to be removed in V3.0. See Pydantic V2 Migration Guide at https://errors.pydantic.dev/2.12/migration/
+    class InitialInventory(InitialInventoryBase):
+
+app/schemas/scenario.py:33
+  /Users/dhruva/Desktop/Adani/backend/app/schemas/scenario.py:33: PydanticDeprecatedSince20: Support for class-based `config` is deprecated, use ConfigDict instead. Deprecated in Pydantic V2.0 to be removed in V3.0. See Pydantic V2 Migration Guide at https://errors.pydantic.dev/2.12/migration/
+    class ScenarioMetadata(ScenarioMetadataBase):
+
+app/services/scenarios/scenario_generator.py:17
+  /Users/dhruva/Desktop/Adani/backend/app/services/scenarios/scenario_generator.py:17: PydanticDeprecatedSince20: Support for class-based `config` is deprecated, use ConfigDict instead. Deprecated in Pydantic V2.0 to be removed in V3.0. See Pydantic V2 Migration Guide at https://errors.pydantic.dev/2.12/migration/
+    class ScenarioConfig(BaseModel):
+
+app/schemas/auth.py:32
+  /Users/dhruva/Desktop/Adani/backend/app/schemas/auth.py:32: PydanticDeprecatedSince20: Support for class-based `config` is deprecated, use ConfigDict instead. Deprecated in Pydantic V2.0 to be removed in V3.0. See Pydantic V2 Migration Guide at https://errors.pydantic.dev/2.12/migration/
+    class User(UserBase):
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+ERROR tests/test_api/test_routing_cache.py::test_route_cache_miss_and_store
+======================== 14 warnings, 1 error in 0.10s =========================

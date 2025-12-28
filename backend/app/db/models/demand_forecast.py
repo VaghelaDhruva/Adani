@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, Float, DateTime
+from sqlalchemy import Column, Integer, String, Float, DateTime, text
 
 from app.db.base import Base
 
@@ -14,5 +14,5 @@ class DemandForecast(Base):
     demand_high_tonnes = Column(Float)  # optional upper bound
     confidence_level = Column(Float)  # e.g., 0.95
     source = Column(String)  # manual, api, forecast_model
-    created_at = Column(DateTime, server_default="now()")
-    updated_at = Column(DateTime, server_default="now()", onupdate="now()")
+    created_at = Column(DateTime, server_default=text("CURRENT_TIMESTAMP"))
+    updated_at = Column(DateTime, server_default=text("CURRENT_TIMESTAMP"), onupdate=text("CURRENT_TIMESTAMP"))

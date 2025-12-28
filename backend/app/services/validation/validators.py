@@ -22,7 +22,19 @@ def validate_referential_integrity(db: Session, records: List[Dict[str, Any]]) -
     Return list of error messages.
     """
     errors = []
-    # TODO: implement referential checks per entity type
+    if not records:
+        return errors
+
+    # Detect target table by checking for a known field
+    if "origin_plant_id" in records[0]:
+        # transport_routes_modes: check origin_plant_id exists in plant_master
+        from app.db.models.plant_master import PlantMaster
+        origin_ids = {r["origin_plant_id"] for r in records if "origin_plant_id" in r}
+        existing = {row.plant_id for row in db.query(PlantMaster.plant_id).filter(PlantMaster.plant_id.in_(origin_ids)).all()}
+        missing = sorted(origin_ids - existing)
+        if missing:
+            errors.append(f"origin_plant_id not found in plant_master: {', '.join(missing)}")
+    # TODO: add other table-specific RI checks later
     return errors
 
 
