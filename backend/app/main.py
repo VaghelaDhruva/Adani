@@ -3,7 +3,15 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from app.core.config import get_settings
 from app.core.logging_config import setup_logging, configure_uvicorn_logging
-from app.api.v1 import routes_health, routes_data, routes_optimization, routes_scenarios, routes_auth, routes_kpi
+from app.api.v1 import (
+    routes_auth,
+    routes_data,
+    routes_health,
+    routes_jobs,
+    routes_kpi,
+    routes_optimization,
+    routes_scenarios,
+)
 
 setup_logging()
 settings = get_settings()
@@ -30,6 +38,7 @@ app.include_router(routes_data.router, prefix=f"{settings.API_V1_STR}/data", tag
 app.include_router(routes_scenarios.router, prefix=f"{settings.API_V1_STR}/scenarios", tags=["scenarios"])
 app.include_router(routes_optimization.router, prefix=f"{settings.API_V1_STR}/optimization", tags=["optimization"])
 app.include_router(routes_kpi.router, prefix=f"{settings.API_V1_STR}/kpi", tags=["kpi"])
+app.include_router(routes_jobs.router, prefix=f"{settings.API_V1_STR}/jobs", tags=["jobs"])
 
 
 @app.get("/")

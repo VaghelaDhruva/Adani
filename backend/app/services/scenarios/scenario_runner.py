@@ -2,12 +2,29 @@ from typing import Any, Dict, List
 
 import pandas as pd
 
-from app.services.optimization.kpi_calculator import compute_kpis
+from app.services.kpi_calculator import compute_kpis as compute_kpis_core
 from app.services.optimization.model_builder import build_clinker_model
 from app.services.optimization.result_parser import extract_solution
 from app.services.optimization.solvers import solve_model
 from app.services.scenarios.scenario_generator import ScenarioConfig, ScenarioType, generate_demand_for_scenario
 from app.utils.exceptions import OptimizationError
+
+
+def _compute_kpis_from_solution(solution: Dict[str, Any]) -> Dict[str, Any]:
+	"""Adapter that feeds solver outputs into the shared KPI calculator.
+
+	The solver/optimizer is free to choose its own internal structures as long
+	as it exposes the aggregate data required by compute_kpis via a simple
+	"solution" mapping. Missing keys default to empty mappings, which the
+	shared KPI calculator treats as zeros.
+	"""
+	return compute_kpis_core(
+		costs=solution.get("costs", {}) or {},
+		demand=solution.get("demand", {}) or {},
+		fulfilled=solution.get("fulfilled", {}) or {},
+		plant_production=solution.get("plant_production", {}) or {},
+		plant_capacity=solution.get("plant_capacity", {}) or {},
+	)
 
 
 def _build_model_input_for_scenario(
@@ -71,7 +88,8 @@ def run_single_scenario_from_config(
 		model = build_clinker_model(model_input)
 		solver_meta = solve_model(model, solver_name=solver_name)
 		solution = extract_solution(model)
-		kpis = compute_kpis(solution, model_input)
+		# Compute KPIs via the shared calculator; scenario engine remains orchestrator.
+		kpis = _compute_kpis_from_solution(solution)
 		return {
 			"name": scenario_cfg.name,
 			"type": scenario_cfg.type,

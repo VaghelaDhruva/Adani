@@ -17,6 +17,7 @@ from app.db.models import (
 from app.schemas.scenario import ScenarioMetadata, ScenarioMetadataCreate, ScenarioMetadataUpdate
 from app.services.scenarios.scenario_generator import ScenarioConfig
 from app.services.scenarios.scenario_runner import run_batch_scenarios_from_configs
+from app.services.audit_service import audit_timer
 from app.utils.exceptions import DataValidationError, OptimizationError
 
 
@@ -156,21 +157,29 @@ def run_scenarios(
 	- delegates execution to the scenario runner
 	"""
 
-	try:
-		data = _load_optimization_data(db)
-		if data["demand_forecast"].empty:
-			raise DataValidationError("No demand data available for scenarios")
-		result = run_batch_scenarios_from_configs(data, scenarios)
-		return result
-	except DataValidationError as e:
-		logger.error("Scenario run validation error: %s", e)
-		raise HTTPException(status_code=400, detail=str(e))
-	except OptimizationError as e:
-		logger.error("Scenario run optimization error: %s", e)
-		raise HTTPException(status_code=400, detail=str(e))
-	except HTTPException:
-		# Re-raise explicit HTTP errors unchanged
-		raise
-	except Exception as e:
-		logger.exception("Unexpected error while running scenarios")
-		raise HTTPException(status_code=500, detail="Failed to run scenarios") from None
+	user = "system"  # TODO: get from auth when available
+	metadata = {"scenario_count": len(scenarios), "scenario_names": [s.name for s in scenarios]}
+
+	with audit_timer(user, "run_scenarios", db, metadata) as timer:
+		try:
+			data = _load_optimization_data(db)
+			if data["demand_forecast"].empty:
+				raise DataValidationError("No demand data available for scenarios")
+			result = run_batch_scenarios_from_configs(data, scenarios)
+			timer.set_success()
+			return result
+		except DataValidationError as e:
+			logger.error("Scenario run validation error: %s", e)
+			timer.set_failure(str(e))
+			raise HTTPException(status_code=400, detail=str(e))
+		except OptimizationError as e:
+			logger.error("Scenario run optimization error: %s", e)
+			timer.set_failure(str(e))
+			raise HTTPException(status_code=400, detail=str(e))
+		except HTTPException:
+			# Re-raise explicit HTTP errors unchanged
+			raise
+		except Exception as e:
+			logger.exception("Unexpected error while running scenarios")
+			timer.set_failure("Unexpected error")
+			raise HTTPException(status_code=500, detail="Failed to run scenarios") from None
