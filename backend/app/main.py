@@ -11,8 +11,13 @@ from app.api.v1 import (
     routes_jobs,
     routes_kpi,
     routes_optimization,
+    routes_runs,
     routes_scenarios,
+    routes_integrations,
 )
+
+# Import the new optimization routes
+from app.api.v1 import routes_optimization as routes_optimization_new
 
 setup_logging()
 settings = get_settings()
@@ -41,6 +46,11 @@ app.include_router(routes_scenarios.router, prefix=f"{settings.API_V1_STR}/scena
 app.include_router(routes_optimization.router, prefix=f"{settings.API_V1_STR}/optimization", tags=["optimization"])
 app.include_router(routes_kpi.router, prefix=f"{settings.API_V1_STR}/kpi", tags=["kpi"])
 app.include_router(routes_jobs.router, prefix=f"{settings.API_V1_STR}/jobs", tags=["jobs"])
+app.include_router(routes_runs.router, prefix=f"{settings.API_V1_STR}", tags=["runs"])
+
+# Include new integration and optimization routes
+app.include_router(routes_integrations.router, prefix=f"{settings.API_V1_STR}/integrations", tags=["integrations"])
+app.include_router(routes_optimization_new.router, prefix=f"{settings.API_V1_STR}/optimize", tags=["optimization-engine"])
 
 
 @app.get("/")
