@@ -13,6 +13,10 @@ import plotly.graph_objects as go
 from datetime import datetime
 import time
 import logging
+<<<<<<< HEAD
+=======
+import traceback
+>>>>>>> d4196135 (Fixed Bug)
 
 from config import API_BASE
 from styles import apply_common_styles, create_page_header, create_section_header, create_status_box, create_custom_divider
@@ -61,6 +65,10 @@ def safe_get(data, key, default=None):
     except (KeyError, TypeError, AttributeError):
         return default
 
+<<<<<<< HEAD
+=======
+@st.cache_data(ttl=60)  # Cache for 1 minute
+>>>>>>> d4196135 (Fixed Bug)
 def fetch_kpi_data(scenario_name: str, max_retries: int = 3):
     """Fetch KPI data with retry logic and error handling."""
     for attempt in range(max_retries):
@@ -92,6 +100,10 @@ def fetch_kpi_data(scenario_name: str, max_retries: int = 3):
     
     return None, "Failed to fetch KPI data after retries"
 
+<<<<<<< HEAD
+=======
+@st.cache_data(ttl=300)  # Cache for 5 minutes
+>>>>>>> d4196135 (Fixed Bug)
 def fetch_available_scenarios():
     """Fetch list of available scenarios."""
     try:
@@ -579,6 +591,7 @@ def display_data_quality_status(kpi_data):
         st.metric("API Status", f"{status_icon} {api_status.title()}")
 
 def main():
+<<<<<<< HEAD
     # Create styled page header
     create_page_header("📊 Enterprise KPI Dashboard", "Primary business dashboard providing comprehensive KPI reporting")
     
@@ -674,3 +687,133 @@ def main():
 
 if __name__ == "__main__":
     main()
+=======
+    """Main function to render the KPI Dashboard."""
+    try:
+        # Debug info
+        st.sidebar.write("🔧 Debug Info:")
+        st.sidebar.write(f"API Base: {API_BASE}")
+        st.sidebar.write(f"Page loaded at: {datetime.now().strftime('%H:%M:%S')}")
+        
+        # Create styled page header
+        create_page_header("📊 Enterprise KPI Dashboard", "Primary business dashboard providing comprehensive KPI reporting")
+        
+        # Scenario selection with enhanced styling
+        col1, col2, col3 = st.columns([2, 1, 1])
+        
+        with col1:
+            with st.spinner("Loading available scenarios..."):
+                available_scenarios = fetch_available_scenarios()
+            
+            st.write(f"Available scenarios: {available_scenarios}")  # Debug info
+            
+            scenario_name = st.selectbox(
+                "Select Scenario",
+                available_scenarios,
+                index=0,
+                help="Choose the scenario to analyze"
+            )
+        
+        with col2:
+            if st.button("🔄 Refresh Data", use_container_width=True):
+                st.cache_data.clear()
+                st.rerun()
+        
+        with col3:
+            csv_mode = st.checkbox("CSV Mode", help="Use uploaded CSV data (admin only)")
+            if csv_mode:
+                create_status_box("⚠️ Using uploaded CSV (non-production dataset)", "warning")
+        
+        # Load KPI data with loading state
+        with st.spinner("Loading KPI data..."):
+            kpi_data, error = fetch_kpi_data(scenario_name)
+        
+        # Debug data state
+        st.write("🔍 Data State:")
+        st.write(f"- KPI Data loaded: {kpi_data is not None}")
+        st.write(f"- Error: {error}")
+        if kpi_data:
+            st.write(f"- Data keys: {list(kpi_data.keys())}")
+        
+        # Error handling with styled messages
+        if error and kpi_data is None:
+            create_status_box(f"**KPI Service unavailable** — {error}", "error")
+            create_status_box("Please retry later or contact system administrator.", "info")
+            return
+        
+        # Warning for partial data
+        if error and kpi_data is not None:
+            create_status_box(f"**Partial data loaded:** {error}", "warning")
+        
+        # Data validation
+        if kpi_data is None:
+            create_status_box("**No KPI data available** — please check scenario configuration.", "error")
+            return
+        
+        # Display all KPI sections with enhanced styling
+        try:
+            # 1. Header/Context
+            display_header_context(kpi_data)
+            
+            create_custom_divider()
+            
+            # 2. Cost Summary
+            display_cost_summary(kpi_data)
+            
+            create_custom_divider()
+            
+            # 3. Service Performance
+            display_service_performance(kpi_data)
+            
+            create_custom_divider()
+            
+            # 4. Production Utilization
+            display_production_utilization(kpi_data)
+            
+            create_custom_divider()
+            
+            # 5. Transport Utilization
+            display_transport_utilization(kpi_data)
+            
+            create_custom_divider()
+            
+            # 6. Inventory & Safety Stock
+            display_inventory_safety_stock(kpi_data)
+            
+            create_custom_divider()
+            
+            # 7. Demand Fulfillment
+            display_demand_fulfillment(kpi_data)
+            
+            create_custom_divider()
+            
+            # 8. Uncertainty Analysis (if available)
+            display_uncertainty_analysis(kpi_data)
+            
+            create_custom_divider()
+            
+            # 9. Data Quality Status
+            display_data_quality_status(kpi_data)
+            
+        except Exception as e:
+            logger.error(f"Error displaying KPI dashboard sections: {e}")
+            st.error(f"Dashboard rendering error: {e}")
+            st.code(traceback.format_exc())
+            create_status_box("**Dashboard rendering error** — please refresh the page.", "error")
+            create_status_box("If the problem persists, contact system administrator.", "info")
+            
+    except Exception as e:
+        logger.error(f"Critical error in KPI Dashboard main: {e}")
+        st.error(f"Critical error: {e}")
+        st.code(traceback.format_exc())
+        st.info("Please refresh the page or contact system administrator.")
+
+# Execute main function directly (not in if __name__ == "__main__")
+# This is required for Streamlit multipage apps
+try:
+    main()
+except Exception as e:
+    st.error(f"Failed to load KPI Dashboard: {e}")
+    st.code(traceback.format_exc())
+    st.info("Please refresh the page or check the backend service.")
+>>>>>>> d4196135 (Fixed Bug)

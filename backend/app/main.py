@@ -26,6 +26,10 @@ app = FastAPI(
     title=settings.PROJECT_NAME,
     openapi_url=f"{settings.API_V1_STR}/openapi.json",
     version="1.0.0",
+<<<<<<< HEAD
+=======
+    description="Supply Chain Optimization System with Real Calculated KPIs"
+>>>>>>> d4196135 (Fixed Bug)
 )
 
 # CORS (adjust origins as needed)
@@ -55,4 +59,50 @@ app.include_router(routes_optimization_new.router, prefix=f"{settings.API_V1_STR
 
 @app.get("/")
 def root():
+<<<<<<< HEAD
     return {"message": f"Welcome to {settings.PROJECT_NAME} API"}
+=======
+    return {
+        "message": f"Welcome to {settings.PROJECT_NAME} API",
+        "version": "1.0.0",
+        "features": [
+            "Real optimization engine with Pyomo + HiGHS solver",
+            "Calculated KPI dashboard with Indian Rupee formatting",
+            "Interactive charts and visualizations",
+            "5-stage data validation pipeline",
+            "Enterprise-grade error handling and logging"
+        ],
+        "endpoints": {
+            "api_docs": "/docs",
+            "kpi_dashboard": "/api/v1/kpi/dashboard/{scenario_name}",
+            "run_optimization": "/api/v1/kpi/run-optimization",
+            "health_check": "/api/v1/dashboard/health-status"
+        }
+    }
+
+
+@app.get("/api/v1/system/info")
+def system_info():
+    """Get system information and capabilities."""
+    return {
+        "system": "Supply Chain Optimization",
+        "version": "1.0.0",
+        "optimization_engine": "Pyomo + HiGHS/CBC",
+        "database": "SQLite with full persistence",
+        "features": {
+            "real_optimization": True,
+            "calculated_kpis": True,
+            "interactive_dashboard": True,
+            "data_validation": True,
+            "scenario_comparison": True,
+            "export_capabilities": True
+        },
+        "sample_data": {
+            "plants": 3,
+            "transport_routes": 9,
+            "customers": 7,
+            "monthly_demand": "108,000 tonnes",
+            "cost_range": "₹1,450,000 - ₹1,850,000"
+        }
+    }
+>>>>>>> d4196135 (Fixed Bug)

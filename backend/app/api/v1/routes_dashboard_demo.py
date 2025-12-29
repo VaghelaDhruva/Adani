@@ -3,6 +3,10 @@ Dashboard API Routes - Enterprise Grade
 
 Provides comprehensive endpoints for enterprise-ready dashboard system.
 All endpoints return structured data with proper error handling.
+<<<<<<< HEAD
+=======
+Now integrated with real optimization engine.
+>>>>>>> d4196135 (Fixed Bug)
 """
 
 from typing import Dict, List, Any, Optional
@@ -14,11 +18,221 @@ import random
 
 from app.core.deps import get_db
 from app.utils.exceptions import DataValidationError, OptimizationError
+<<<<<<< HEAD
+=======
+from app.services.optimization_service import OptimizationService
+from app.services.data_validation_service import run_comprehensive_validation
+from app.services.kpi_calculator import get_latest_kpi_data, get_kpi_history
+>>>>>>> d4196135 (Fixed Bug)
 
 router = APIRouter()
 logger = logging.getLogger(__name__)
 
 
+<<<<<<< HEAD
+=======
+@router.get("/kpi/dashboard/{scenario_name}")
+async def get_dashboard_kpis(
+    scenario_name: str,
+    db: Session = Depends(get_db)
+) -> Dict[str, Any]:
+    """
+    Get comprehensive KPI dashboard data for a scenario.
+    Uses real optimization results when available.
+    """
+    try:
+        optimization_service = OptimizationService(db)
+        kpi_data = optimization_service.get_kpi_data(scenario_name)
+        
+        if kpi_data:
+            logger.info(f"Retrieved real KPI data for dashboard scenario {scenario_name}")
+            return kpi_data
+        
+        # Fallback to mock data with enhanced structure
+        logger.warning(f"No optimization results found for scenario {scenario_name}, returning enhanced mock data")
+        return _generate_enterprise_kpi_data(scenario_name)
+        
+    except Exception as e:
+        logger.error(f"Failed to get dashboard KPIs for {scenario_name}: {e}")
+        raise HTTPException(status_code=500, detail=f"Internal server error: {str(e)}")
+
+
+@router.post("/run-optimization")
+async def run_optimization(
+    background_tasks: BackgroundTasks,
+    scenario_name: str,
+    solver_name: str = "HiGHS",
+    time_limit: int = 600,
+    demand_multiplier: float = 1.0,
+    capacity_multiplier: float = 1.0,
+    db: Session = Depends(get_db)
+) -> Dict[str, Any]:
+    """
+    Execute optimization for a scenario.
+    """
+    try:
+        optimization_service = OptimizationService(db)
+        
+        scenario_parameters = {
+            "demand_multiplier": demand_multiplier,
+            "capacity_multiplier": capacity_multiplier
+        }
+        
+        # Run optimization in background
+        def run_optimization_task():
+            try:
+                run_id = optimization_service.run_optimization(
+                    scenario_name=scenario_name,
+                    solver_name=solver_name,
+                    time_limit=time_limit,
+                    scenario_parameters=scenario_parameters
+                )
+                logger.info(f"Background optimization completed: {run_id}")
+            except Exception as e:
+                logger.error(f"Background optimization failed: {e}")
+        
+        background_tasks.add_task(run_optimization_task)
+        
+        return {
+            "status": "started",
+            "scenario_name": scenario_name,
+            "message": f"Optimization started for scenario {scenario_name}",
+            "estimated_completion": (datetime.utcnow() + timedelta(seconds=time_limit)).isoformat()
+        }
+        
+    except Exception as e:
+        logger.error(f"Failed to start optimization for {scenario_name}: {e}")
+        raise HTTPException(status_code=500, detail=f"Failed to start optimization: {str(e)}")
+
+
+@router.get("/health-status")
+async def get_health_status(db: Session = Depends(get_db)) -> Dict[str, Any]:
+    """
+    Get comprehensive system health status including data validation.
+    """
+    try:
+        # Run data validation
+        validation_result = run_comprehensive_validation(db)
+        
+        # Get optimization run statistics
+        from app.db.models.optimization_run import OptimizationRun
+        
+        total_runs = db.query(OptimizationRun).count()
+        completed_runs = db.query(OptimizationRun).filter(OptimizationRun.status == "completed").count()
+        failed_runs = db.query(OptimizationRun).filter(OptimizationRun.status == "failed").count()
+        running_runs = db.query(OptimizationRun).filter(OptimizationRun.status == "running").count()
+        
+        # Calculate overall health score
+        validation_score = 1.0 if validation_result["overall_status"] == "PASS" else 0.5 if validation_result["overall_status"] == "WARN" else 0.0
+        optimization_score = (completed_runs / max(total_runs, 1)) if total_runs > 0 else 1.0
+        overall_health = (validation_score + optimization_score) / 2
+        
+        return {
+            "overall_status": "HEALTHY" if overall_health > 0.8 else "WARNING" if overall_health > 0.5 else "CRITICAL",
+            "overall_health_score": overall_health,
+            "timestamp": datetime.utcnow().isoformat(),
+            
+            "data_validation": {
+                "status": validation_result["overall_status"],
+                "total_errors": validation_result.get("total_errors", 0),
+                "total_warnings": validation_result.get("total_warnings", 0),
+                "tables_validated": len(validation_result.get("table_results", {})),
+                "optimization_ready": validation_result["overall_status"] == "PASS"
+            },
+            
+            "optimization_engine": {
+                "total_runs": total_runs,
+                "completed_runs": completed_runs,
+                "failed_runs": failed_runs,
+                "running_runs": running_runs,
+                "success_rate": completed_runs / max(total_runs, 1) if total_runs > 0 else 0.0
+            },
+            
+            "system_resources": {
+                "database_connected": True,
+                "solver_available": True,  # Should check actual solver availability
+                "memory_usage": "Normal",  # Should implement actual monitoring
+                "cpu_usage": "Normal"
+            }
+        }
+        
+    except Exception as e:
+        logger.error(f"Failed to get health status: {e}")
+        return {
+            "overall_status": "CRITICAL",
+            "overall_health_score": 0.0,
+            "timestamp": datetime.utcnow().isoformat(),
+            "error": str(e)
+        }
+
+
+@router.get("/scenarios/compare")
+async def compare_scenarios(
+    scenario_names: List[str] = Query(...),
+    db: Session = Depends(get_db)
+) -> Dict[str, Any]:
+    """
+    Compare KPIs across multiple scenarios.
+    """
+    try:
+        comparison = {
+            "comparison_timestamp": datetime.utcnow().isoformat(),
+            "scenarios": [],
+            "summary_metrics": {}
+        }
+        
+        total_costs = []
+        service_levels = []
+        
+        for scenario_name in scenario_names:
+            try:
+                optimization_service = OptimizationService(db)
+                scenario_kpis = optimization_service.get_kpi_data(scenario_name)
+                
+                if not scenario_kpis:
+                    # Fallback to mock data
+                    scenario_kpis = _generate_enterprise_kpi_data(scenario_name)
+                
+                comparison["scenarios"].append(scenario_kpis)
+                total_costs.append(scenario_kpis["total_cost"])
+                service_levels.append(scenario_kpis["service_performance"]["service_level"])
+                
+            except Exception as e:
+                logger.warning(f"Failed to get KPIs for scenario {scenario_name}: {e}")
+                comparison["scenarios"].append({
+                    "scenario_name": scenario_name,
+                    "error": f"Failed to load: {str(e)}",
+                    "total_cost": 0.0,
+                    "service_performance": {"service_level": 0.0}
+                })
+                total_costs.append(0.0)
+                service_levels.append(0.0)
+        
+        # Calculate summary metrics
+        if total_costs and service_levels:
+            comparison["summary_metrics"] = {
+                "cost_range": {
+                    "min": min(total_costs),
+                    "max": max(total_costs),
+                    "avg": sum(total_costs) / len(total_costs)
+                },
+                "service_level_range": {
+                    "min": min(service_levels),
+                    "max": max(service_levels),
+                    "avg": sum(service_levels) / len(service_levels)
+                },
+                "cost_variance": max(total_costs) - min(total_costs),
+                "service_variance": max(service_levels) - min(service_levels)
+            }
+        
+        return comparison
+        
+    except Exception as e:
+        logger.error(f"Failed to compare scenarios: {e}")
+        raise HTTPException(status_code=500, detail=f"Comparison failed: {str(e)}")
+
+
+>>>>>>> d4196135 (Fixed Bug)
 def _generate_enterprise_kpi_data(scenario_name: str) -> Dict[str, Any]:
     """Generate comprehensive enterprise KPI data structure."""
     

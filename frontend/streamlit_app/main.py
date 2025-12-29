@@ -5,6 +5,10 @@ import plotly.graph_objects as go
 import pandas as pd
 import time
 import logging
+<<<<<<< HEAD
+=======
+import traceback
+>>>>>>> d4196135 (Fixed Bug)
 from datetime import datetime
 from pathlib import Path
 import sys
@@ -223,6 +227,7 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 def main():
+<<<<<<< HEAD
     # ========================================
     # MAIN DASHBOARD SELECTION
     # Change this to switch between KPI Dashboard or Results Dashboard as main page
@@ -362,3 +367,170 @@ def show_main_page():
 
 if __name__ == "__main__":
     main()
+=======
+    """Main function to render the home page."""
+    try:
+        # Debug info
+        st.sidebar.write("🔧 Debug Info:")
+        st.sidebar.write(f"API Base: {API_BASE}")
+        st.sidebar.write(f"Main page loaded at: {datetime.now().strftime('%H:%M:%S')}")
+        
+        # ========================================
+        # MAIN DASHBOARD SELECTION
+        # Change this to switch between KPI Dashboard or Results Dashboard as main page
+        # ========================================
+        
+        MAIN_DASHBOARD = "HOME"  # Options: "KPI", "RESULTS", or "HOME"
+        
+        if MAIN_DASHBOARD == "KPI":
+            # Redirect to KPI Dashboard as main page
+            st.switch_page("pages/01_KPI_Dashboard.py")
+        elif MAIN_DASHBOARD == "RESULTS":
+            # Redirect to Results Dashboard as main page  
+            st.switch_page("pages/06_Results_Dashboard.py")
+        else:
+            # Show original main page
+            show_main_page()
+            
+    except Exception as e:
+        logger.error(f"Error in main function: {e}")
+        st.error(f"Error loading main page: {e}")
+        st.code(traceback.format_exc())
+        st.info("Please refresh the page.")
+
+def show_main_page():
+    """Show the main landing page."""
+    try:
+        # Create styled header
+        st.markdown("""
+        <div class="main-header fade-in">
+            <h1>🏭 Clinker Supply Chain Optimization Dashboard</h1>
+            <p>Enterprise-grade dashboard for supply chain optimization with comprehensive KPI reporting</p>
+        </div>
+        """, unsafe_allow_html=True)
+        
+        # Sidebar navigation
+        st.sidebar.title("📋 Navigation")
+        st.sidebar.markdown("**Essential Dashboard Pages:**")
+        
+        # Essential dashboard sections only
+        if st.sidebar.button("📊 KPI Dashboard", use_container_width=True):
+            st.switch_page("pages/01_KPI_Dashboard.py")
+        st.sidebar.caption("Primary business dashboard with comprehensive KPI reporting")
+        
+        if st.sidebar.button("⚖️ Scenario Comparison", use_container_width=True):
+            st.switch_page("pages/02_Scenario_Comparison.py")
+        st.sidebar.caption("Compare cost and service impacts across scenarios")
+        
+        if st.sidebar.button("📈 Results Dashboard", use_container_width=True):
+            st.switch_page("pages/06_Results_Dashboard.py")
+        st.sidebar.caption("Live optimization results visualization")
+        
+        st.sidebar.markdown("---")
+        
+        # Main content
+        st.info("👈 Use the sidebar to navigate to the essential dashboard sections")
+        
+        # Quick status overview
+        st.subheader("🎯 Quick Status Overview")
+        
+        # Test backend connection
+        try:
+            with st.spinner("Testing backend connection..."):
+                response = requests.get(f"{API_BASE}/dashboard/scenarios/list", timeout=5)
+            backend_status = "🟢 Connected" if response.status_code == 200 else "🟡 Issues"
+            backend_help = "API connection successful" if response.status_code == 200 else f"API returned {response.status_code}"
+        except Exception as e:
+            backend_status = "🔴 Disconnected"
+            backend_help = f"Cannot connect to backend API: {str(e)}"
+        
+        col1, col2, col3 = st.columns(3)
+        
+        with col1:
+            st.metric("Backend Status", backend_status, help=backend_help)
+        
+        with col2:
+            st.metric("Dashboard Pages", "3", help="Essential dashboard pages available")
+        
+        with col3:
+            st.metric("Last Updated", datetime.now().strftime("%H:%M:%S"), help="Current time")
+        
+        # Feature highlights
+        st.subheader("✨ Essential Dashboard Features")
+        
+        features = [
+            {
+                "title": "📊 KPI Dashboard",
+                "description": "Comprehensive business KPIs with INR currency formatting",
+                "details": ["Cost summary with INR formatting", "Service performance metrics", "Production & transport utilization", "Inventory & safety stock status"]
+            },
+            {
+                "title": "⚖️ Scenario Comparison", 
+                "description": "Compare multiple scenarios side-by-side",
+                "details": ["Cost vs service trade-offs", "Utilization comparisons", "Risk analysis", "Automated recommendations"]
+            },
+            {
+                "title": "📈 Results Dashboard",
+                "description": "Detailed optimization results visualization", 
+                "details": ["Production planning", "Shipment routing", "Cost breakdowns", "Service level analysis"]
+            }
+        ]
+        
+        cols = st.columns(3)
+        
+        for i, feature in enumerate(features):
+            with cols[i]:
+                with st.container():
+                    st.markdown(f"### {feature['title']}")
+                    st.write(feature['description'])
+                    
+                    with st.expander("Details"):
+                        for detail in feature['details']:
+                            st.write(f"• {detail}")
+        
+        # Data flow guarantee
+        st.subheader("🛡️ Enterprise Quality Standards")
+        
+        st.success("""
+        **PRODUCTION-READY FEATURES:**
+        
+        ✅ **Currency Formatting:** All costs displayed in INR with proper Indian digit grouping (₹X.XX Cr/L)
+        
+        ✅ **Enterprise KPIs:** Comprehensive business metrics with real-time data
+        
+        ✅ **Scenario Analysis:** Multi-scenario comparison with automated recommendations
+        
+        ✅ **Error Handling:** Robust error handling with graceful degradation
+        """)
+        
+        # Quick links
+        st.subheader("🔗 Quick Access")
+        
+        link_cols = st.columns(3)
+        
+        with link_cols[0]:
+            if st.button("📊 KPI Dashboard", use_container_width=True):
+                st.switch_page("pages/01_KPI_Dashboard.py")
+        
+        with link_cols[1]:
+            if st.button("⚖️ Scenario Comparison", use_container_width=True):
+                st.switch_page("pages/02_Scenario_Comparison.py")
+        
+        with link_cols[2]:
+            if st.button("📈 Results Dashboard", use_container_width=True):
+                st.switch_page("pages/06_Results_Dashboard.py")
+                
+    except Exception as e:
+        logger.error(f"Error in show_main_page: {e}")
+        st.error(f"Error displaying main page: {e}")
+        st.code(traceback.format_exc())
+
+# Execute main function directly (not in if __name__ == "__main__")
+# This is required for Streamlit multipage apps
+try:
+    main()
+except Exception as e:
+    st.error(f"Failed to load application: {e}")
+    st.code(traceback.format_exc())
+    st.info("Please refresh the page or check the system status.")
+>>>>>>> d4196135 (Fixed Bug)

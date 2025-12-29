@@ -15,7 +15,11 @@ import asyncio
 from pydantic import BaseModel
 
 from app.core.deps import get_db
+<<<<<<< HEAD
 from app.services.optimization.optimization_engine import optimization_engine, create_sample_input_data
+=======
+from app.services.optimization.optimization_engine_fixed import OptimizationEngine, create_sample_input_data
+>>>>>>> d4196135 (Fixed Bug)
 from app.utils.exceptions import OptimizationError, DataValidationError
 
 router = APIRouter()
@@ -46,14 +50,40 @@ class OptimizationStatus(BaseModel):
     error_message: Optional[str] = None
 
 
+<<<<<<< HEAD
 @router.post("/optimize")
+=======
+@router.post("/")
+>>>>>>> d4196135 (Fixed Bug)
 async def run_optimization(
     request: OptimizationRequest,
     background_tasks: BackgroundTasks,
     db: Session = Depends(get_db)
 ):
+<<<<<<< HEAD
     """Run mathematical optimization with the actual optimization engine."""
     try:
+=======
+    """Run mathematical optimization with STRICT data validation gating."""
+    try:
+        # CRITICAL: Check data validation status FIRST
+        from app.services.data_validation_gateway import check_optimization_readiness
+        
+        readiness_check = check_optimization_readiness(db)
+        
+        if not readiness_check["optimization_ready"]:
+            logger.error(f"Optimization blocked by data validation errors: {readiness_check['blocking_errors']}")
+            raise HTTPException(
+                status_code=422,
+                detail={
+                    "error": "Optimization blocked by data validation failures",
+                    "blocking_errors": readiness_check["blocking_errors"],
+                    "status": "VALIDATION_FAILED",
+                    "message": "Fix data quality issues before running optimization"
+                }
+            )
+        
+>>>>>>> d4196135 (Fixed Bug)
         # Generate unique run ID
         run_id = f"OPT_{datetime.now().strftime('%Y%m%d_%H%M%S')}"
         
@@ -64,29 +94,51 @@ async def run_optimization(
             "start_time": datetime.now().isoformat(),
             "scenario_name": request.scenario_name,
             "solver": request.solver,
+<<<<<<< HEAD
             "time_limit": request.time_limit
+=======
+            "time_limit": request.time_limit,
+            "validation_passed": True
+>>>>>>> d4196135 (Fixed Bug)
         }
         
         # Run optimization in background
         background_tasks.add_task(
             _run_optimization_task,
             run_id,
+<<<<<<< HEAD
             request
+=======
+            request,
+            db
+>>>>>>> d4196135 (Fixed Bug)
         )
         
         return {
             "run_id": run_id,
             "status": "queued",
+<<<<<<< HEAD
             "message": "Optimization started successfully",
             "estimated_runtime": f"{request.time_limit} seconds (max)",
             "timestamp": datetime.now().isoformat()
         }
         
+=======
+            "message": "Optimization started successfully - data validation passed",
+            "estimated_runtime": f"{request.time_limit} seconds (max)",
+            "timestamp": datetime.now().isoformat(),
+            "validation_status": "PASSED"
+        }
+        
+    except HTTPException:
+        raise
+>>>>>>> d4196135 (Fixed Bug)
     except Exception as e:
         logger.error(f"Error starting optimization: {e}")
         raise HTTPException(status_code=500, detail=f"Failed to start optimization: {str(e)}")
 
 
+<<<<<<< HEAD
 async def _run_optimization_task(run_id: str, request: OptimizationRequest):
     """Background task to run the optimization."""
     try:
@@ -104,19 +156,67 @@ async def _run_optimization_task(run_id: str, request: OptimizationRequest):
         
         # Build optimization model
         optimization_engine.build_model(input_data)
+=======
+async def _run_optimization_task(run_id: str, request: OptimizationRequest, db: Session):
+    """Background task to run the REAL optimization engine with validated data."""
+    try:
+        # Update status to validating data
+        running_optimizations[run_id]["status"] = "validating_data"
+        running_optimizations[run_id]["progress"] = 5
+        
+        # Get clean, validated data through the gateway
+        from app.services.data_validation_gateway import DataValidationGateway
+        
+        gateway = DataValidationGateway(db)
+        is_ready, clean_data, blocking_errors = gateway.validate_and_prepare_optimization_data()
+        
+        if not is_ready:
+            logger.error(f"Optimization {run_id} failed validation: {blocking_errors}")
+            completed_optimizations[run_id] = {
+                "status": "failed",
+                "error_message": f"Data validation failed: {'; '.join(blocking_errors)}",
+                "completed_at": datetime.now().isoformat()
+            }
+            if run_id in running_optimizations:
+                del running_optimizations[run_id]
+            return
+        
+        # Update status to building model
+        running_optimizations[run_id]["status"] = "building_model"
+        running_optimizations[run_id]["progress"] = 15
+        
+        # Apply scenario modifications to clean data
+        input_data = _apply_scenario_modifications(clean_data, request.scenario_name)
+>>>>>>> d4196135 (Fixed Bug)
         
         # Update status to solving
         running_optimizations[run_id]["status"] = "solving"
         running_optimizations[run_id]["progress"] = 30
         
+<<<<<<< HEAD
         # Solve the model
         result = optimization_engine.solve(
             solver_name=request.solver,
             time_limit=request.time_limit
+=======
+        # Initialize and run REAL optimization engine
+        engine = OptimizationEngine()
+        engine.build_model(input_data)
+        
+        # Update progress
+        running_optimizations[run_id]["progress"] = 50
+        
+        # Solve the model with specified solver
+        solve_results = engine.solve(
+            solver=request.solver,
+            time_limit=request.time_limit,
+            mip_gap=request.mip_gap
+>>>>>>> d4196135 (Fixed Bug)
         )
         
         # Update status to processing results
         running_optimizations[run_id]["status"] = "processing_results"
+<<<<<<< HEAD
         running_optimizations[run_id]["progress"] = 90
         
         # Get model statistics
@@ -147,15 +247,109 @@ async def _run_optimization_task(run_id: str, request: OptimizationRequest):
         running_optimizations[run_id]["status"] = "completed"
         running_optimizations[run_id]["progress"] = 100
         
+=======
+        running_optimizations[run_id]["progress"] = 80
+        
+        # Extract and format results
+        formatted_results = engine.extract_results()
+        
+        # Store results in completed optimizations
+        completed_optimizations[run_id] = {
+            "status": "completed",
+            "results": formatted_results,
+            "solver_status": solve_results.get("solver_status"),
+            "objective_value": solve_results.get("objective_value"),
+            "solve_time": solve_results.get("solve_time"),
+            "solver_name": solve_results.get("solver_name"),
+            "completed_at": datetime.now().isoformat(),
+            "scenario_name": request.scenario_name,
+            "data_source": "validated_clean_data"
+        }
+        
+        # Remove from running optimizations
+        if run_id in running_optimizations:
+            del running_optimizations[run_id]
+            
+        logger.info(f"Optimization {run_id} completed successfully with {solve_results.get('solver_status')} status")
+        
+    except Exception as e:
+        logger.error(f"Optimization {run_id} failed: {e}")
+        completed_optimizations[run_id] = {
+            "status": "failed",
+            "error_message": str(e),
+            "completed_at": datetime.now().isoformat(),
+            "scenario_name": request.scenario_name
+        }
+        if run_id in running_optimizations:
+            del running_optimizations[run_id]
+        formatted_results = engine.extract_results()
+        
+        # Store results in completed optimizations
+        completed_optimizations[run_id] = {
+            "status": "completed",
+            "results": formatted_results,
+            "solver_status": results.get("solver_status"),
+            "objective_value": results.get("objective_value"),
+            "solve_time": results.get("solve_time"),
+            "completed_at": datetime.now().isoformat()
+        }
+        
+        # Remove from running optimizations
+        if run_id in running_optimizations:
+            del running_optimizations[run_id]
+            
+>>>>>>> d4196135 (Fixed Bug)
         logger.info(f"Optimization {run_id} completed successfully")
         
     except Exception as e:
         logger.error(f"Optimization {run_id} failed: {e}")
+<<<<<<< HEAD
         
         # Update error status
         running_optimizations[run_id]["status"] = "failed"
         running_optimizations[run_id]["error_message"] = str(e)
         running_optimizations[run_id]["progress"] = 0
+=======
+        completed_optimizations[run_id] = {
+            "status": "failed",
+            "error_message": str(e),
+            "completed_at": datetime.now().isoformat()
+        }
+        if run_id in running_optimizations:
+            del running_optimizations[run_id]
+
+
+def _apply_scenario_modifications(input_data: Dict[str, Any], scenario_name: str) -> Dict[str, Any]:
+    """Apply scenario-specific modifications to input data."""
+    
+    if scenario_name == "high_demand":
+        # Increase demand by 20%
+        for customer in input_data.get("demand", []):
+            customer["demand_tonnes"] *= 1.2
+            
+    elif scenario_name == "low_demand":
+        # Decrease demand by 15%
+        for customer in input_data.get("demand", []):
+            customer["demand_tonnes"] *= 0.85
+            
+    elif scenario_name == "capacity_constrained":
+        # Reduce capacity by 25%
+        for plant in input_data.get("capacity", []):
+            plant["max_capacity_tonnes"] *= 0.75
+            
+    elif scenario_name == "transport_disruption":
+        # Increase transport costs by 30%
+        for route in input_data.get("routes", []):
+            route["cost_per_tonne"] *= 1.3
+            
+    elif scenario_name == "fuel_price_spike":
+        # Increase all transport costs by 40%
+        for route in input_data.get("routes", []):
+            route["cost_per_tonne"] *= 1.4
+            route["cost_per_tonne_km"] *= 1.4
+    
+    return input_data
+>>>>>>> d4196135 (Fixed Bug)
 
 
 def _modify_data_for_scenario(input_data: Dict[str, Any], scenario_name: str) -> Dict[str, Any]:
@@ -197,7 +391,11 @@ def _modify_data_for_scenario(input_data: Dict[str, Any], scenario_name: str) ->
     return input_data
 
 
+<<<<<<< HEAD
 @router.get("/optimize/{run_id}/status")
+=======
+@router.get("/{run_id}/status")
+>>>>>>> d4196135 (Fixed Bug)
 async def get_optimization_status(run_id: str):
     """Get status of a running or completed optimization."""
     try:
@@ -240,7 +438,11 @@ async def get_optimization_status(run_id: str):
         raise HTTPException(status_code=500, detail=f"Failed to get optimization status: {str(e)}")
 
 
+<<<<<<< HEAD
 @router.get("/optimize/{run_id}/results")
+=======
+@router.get("/{run_id}/results")
+>>>>>>> d4196135 (Fixed Bug)
 async def get_optimization_results(run_id: str):
     """Get detailed results of a completed optimization."""
     try:
@@ -327,7 +529,11 @@ async def get_optimization_results(run_id: str):
         raise HTTPException(status_code=500, detail=f"Failed to get optimization results: {str(e)}")
 
 
+<<<<<<< HEAD
 @router.get("/optimize/runs")
+=======
+@router.get("/runs")
+>>>>>>> d4196135 (Fixed Bug)
 async def get_optimization_runs(
     limit: int = Query(20, ge=1, le=100),
     status_filter: Optional[str] = Query(None)
@@ -383,7 +589,11 @@ async def get_optimization_runs(
         raise HTTPException(status_code=500, detail=f"Failed to get optimization runs: {str(e)}")
 
 
+<<<<<<< HEAD
 @router.delete("/optimize/{run_id}")
+=======
+@router.delete("/{run_id}")
+>>>>>>> d4196135 (Fixed Bug)
 async def delete_optimization_run(run_id: str):
     """Delete an optimization run and its results."""
     try:
@@ -412,7 +622,11 @@ async def delete_optimization_run(run_id: str):
         raise HTTPException(status_code=500, detail=f"Failed to delete optimization run: {str(e)}")
 
 
+<<<<<<< HEAD
 @router.get("/optimize/scenarios")
+=======
+@router.get("/scenarios")
+>>>>>>> d4196135 (Fixed Bug)
 async def get_available_scenarios():
     """Get list of available optimization scenarios."""
     return {
@@ -452,7 +666,11 @@ async def get_available_scenarios():
     }
 
 
+<<<<<<< HEAD
 @router.get("/optimize/solvers")
+=======
+@router.get("/solvers")
+>>>>>>> d4196135 (Fixed Bug)
 async def get_available_solvers():
     """Get list of available optimization solvers."""
     return {
@@ -485,7 +703,11 @@ async def get_available_solvers():
     }
 
 
+<<<<<<< HEAD
 @router.get("/optimize/model-template")
+=======
+@router.get("/model-template")
+>>>>>>> d4196135 (Fixed Bug)
 async def get_model_template():
     """Get template for optimization input data."""
     template = create_sample_input_data()
@@ -501,7 +723,11 @@ async def get_model_template():
     }
 
 
+<<<<<<< HEAD
 @router.post("/optimize/validate-input")
+=======
+@router.post("/validate-input")
+>>>>>>> d4196135 (Fixed Bug)
 async def validate_optimization_input(input_data: Dict[str, Any]):
     """Validate optimization input data."""
     try:
