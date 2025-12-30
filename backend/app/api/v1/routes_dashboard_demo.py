@@ -108,56 +108,98 @@ async def get_health_status(db: Session = Depends(get_db)) -> Dict[str, Any]:
     Get comprehensive system health status including data validation.
     """
     try:
-        # Run data validation
-        validation_result = run_comprehensive_validation(db)
+        from sqlalchemy import text
         
-        # Get optimization run statistics
-        from app.db.models.optimization_run import OptimizationRun
+        # Get actual table data from database
+        tables = []
+        table_names = [
+            'plant_master', 'demand_forecast', 'transport_routes_modes', 
+            'safety_stock_policy', 'initial_inventory', 'production_capacity_cost',
+            'optimization_run', 'optimization_results', 'kpi_snapshot'
+        ]
         
-        total_runs = db.query(OptimizationRun).count()
-        completed_runs = db.query(OptimizationRun).filter(OptimizationRun.status == "completed").count()
-        failed_runs = db.query(OptimizationRun).filter(OptimizationRun.status == "failed").count()
-        running_runs = db.query(OptimizationRun).filter(OptimizationRun.status == "running").count()
+        total_errors = 0
+        total_warnings = 0
+        optimization_ready = True
         
-        # Calculate overall health score
-        validation_score = 1.0 if validation_result["overall_status"] == "PASS" else 0.5 if validation_result["overall_status"] == "WARN" else 0.0
-        optimization_score = (completed_runs / max(total_runs, 1)) if total_runs > 0 else 1.0
-        overall_health = (validation_score + optimization_score) / 2
+        for table_name in table_names:
+            try:
+                # Get record count using proper SQLAlchemy text()
+                result = db.execute(text(f"SELECT COUNT(*) FROM {table_name}"))
+                record_count = result.fetchone()[0]
+                
+                # Determine status based on record count and table importance
+                if table_name in ['plant_master', 'demand_forecast', 'transport_routes_modes'] and record_count == 0:
+                    status = "error"
+                    issues = [f"Critical table {table_name} is empty"]
+                    total_errors += 1
+                    optimization_ready = False
+                elif record_count == 0:
+                    status = "warning"
+                    issues = [f"Table {table_name} is empty"]
+                    total_warnings += 1
+                else:
+                    status = "healthy"
+                    issues = []
+                
+                # Get last updated (mock for now)
+                last_updated = datetime.utcnow().isoformat()
+                
+                tables.append({
+                    "table_name": table_name,
+                    "status": status,
+                    "record_count": record_count,
+                    "last_updated": last_updated,
+                    "issues": issues
+                })
+                
+            except Exception as e:
+                logger.warning(f"Error checking table {table_name}: {e}")
+                tables.append({
+                    "table_name": table_name,
+                    "status": "error",
+                    "record_count": 0,
+                    "last_updated": datetime.utcnow().isoformat(),
+                    "issues": [f"Error accessing table: {str(e)}"]
+                })
+                total_errors += 1
+                optimization_ready = False
+        
+        # Calculate overall status
+        if total_errors > 0:
+            overall_status = "error"
+        elif total_warnings > 0:
+            overall_status = "warning"
+        else:
+            overall_status = "healthy"
+        
+        # Check if we have minimum required data for optimization
+        core_tables_with_data = sum(1 for t in tables if t["table_name"] in ['plant_master', 'demand_forecast', 'transport_routes_modes'] and t["record_count"] > 0)
+        optimization_ready = optimization_ready and core_tables_with_data >= 3
         
         return {
-            "overall_status": "HEALTHY" if overall_health > 0.8 else "WARNING" if overall_health > 0.5 else "CRITICAL",
-            "overall_health_score": overall_health,
-            "timestamp": datetime.utcnow().isoformat(),
-            
-            "data_validation": {
-                "status": validation_result["overall_status"],
-                "total_errors": validation_result.get("total_errors", 0),
-                "total_warnings": validation_result.get("total_warnings", 0),
-                "tables_validated": len(validation_result.get("table_results", {})),
-                "optimization_ready": validation_result["overall_status"] == "PASS"
+            "overall_status": overall_status,
+            "optimization_ready": optimization_ready,
+            "tables": tables,
+            "validation_summary": {
+                "total_errors": total_errors,
+                "total_warnings": total_warnings,
+                "blocking_errors": total_errors if not optimization_ready else 0
             },
-            
-            "optimization_engine": {
-                "total_runs": total_runs,
-                "completed_runs": completed_runs,
-                "failed_runs": failed_runs,
-                "running_runs": running_runs,
-                "success_rate": completed_runs / max(total_runs, 1) if total_runs > 0 else 0.0
-            },
-            
-            "system_resources": {
-                "database_connected": True,
-                "solver_available": True,  # Should check actual solver availability
-                "memory_usage": "Normal",  # Should implement actual monitoring
-                "cpu_usage": "Normal"
-            }
+            "timestamp": datetime.utcnow().isoformat()
         }
         
     except Exception as e:
         logger.error(f"Failed to get health status: {e}")
         return {
-            "overall_status": "CRITICAL",
-            "overall_health_score": 0.0,
+            "overall_status": "error",
+            "optimization_ready": False,
+            "tables": [],
+            "validation_summary": {
+                "total_errors": 1,
+                "total_warnings": 0,
+                "blocking_errors": 1
+            },
             "timestamp": datetime.utcnow().isoformat(),
             "error": str(e)
         }

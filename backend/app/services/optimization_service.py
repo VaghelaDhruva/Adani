@@ -3,6 +3,15 @@ Optimization Service
 
 Executes supply chain optimization using Pyomo and stores results.
 Integrates with KPI calculator to provide real calculated figures.
+
+PHASE 4 - IMPROVED OPTIMIZATION MODEL:
+- SBQ (minimum batch quantity) as hard constraints
+- Integer trip counts with vehicle capacity linking
+- Fixed trip costs per dispatch
+- Multi-period inventory balance
+- Safety stock enforcement at end of each period
+- Trips * vehicle_capacity >= shipped_volume
+- SBQ <= shipped volume OR no shipment at all
 """
 
 from typing import Dict, List, Any, Optional, Tuple
@@ -25,6 +34,7 @@ from app.db.models.initial_inventory import InitialInventory
 from app.db.models.safety_stock_policy import SafetyStockPolicy
 from app.services.data_validation_service import run_comprehensive_validation
 from app.services.kpi_calculator import KPICalculator
+from app.services.optimization.model_builder import build_clinker_model
 from app.utils.exceptions import OptimizationError, DataValidationError
 
 logger = logging.getLogger(__name__)
@@ -118,85 +128,36 @@ class OptimizationService:
             raise OptimizationError(f"Optimization failed: {e}")
     
     def _load_optimization_data(self, scenario_parameters: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
-        """Load all data needed for optimization."""
+        """Load all data needed for optimization using the SAFE data access guard."""
         
-        # Load plants
-        plants_df = pd.DataFrame([
-            {
-                "plant_id": p.plant_id,
-                "plant_name": p.plant_name,
-                "plant_type": p.plant_type
-            }
-            for p in self.db.query(PlantMaster).all()
-        ])
+        # PHASE 1 DATA SAFETY: Use data access guard to prevent staging table access
+        from app.services.data_access_guard import get_safe_optimization_data
         
-        # Load production capacity
-        production_df = pd.DataFrame([
-            {
-                "plant_id": r.plant_id,
-                "period": r.period,
-                "max_capacity_tonnes": r.max_capacity_tonnes,
-                "variable_cost_per_tonne": r.variable_cost_per_tonne,
-                "fixed_cost_per_period": r.fixed_cost_per_period,
-                "min_run_level": r.min_run_level,
-                "holding_cost_per_tonne": r.holding_cost_per_tonne
-            }
-            for r in self.db.query(ProductionCapacityCost).all()
-        ])
+        logger.info("Loading optimization data through data access guard (production tables only)")
+        dataset = get_safe_optimization_data(self.db)
         
-        # Load transport routes
-        routes_df = pd.DataFrame([
-            {
-                "origin_plant_id": r.origin_plant_id,
-                "destination_node_id": r.destination_node_id,
-                "transport_mode": r.transport_mode,
-                "distance_km": r.distance_km,
-                "cost_per_tonne": r.cost_per_tonne,
-                "cost_per_tonne_km": r.cost_per_tonne_km,
-                "fixed_cost_per_trip": r.fixed_cost_per_trip,
-                "vehicle_capacity_tonnes": r.vehicle_capacity_tonnes,
-                "min_batch_quantity_tonnes": r.min_batch_quantity_tonnes,
-                "lead_time_days": r.lead_time_days
-            }
-            for r in self.db.query(TransportRoutesModes).filter(TransportRoutesModes.is_active == "Y").all()
-        ])
-        
-        # Load demand forecast
-        demand_df = pd.DataFrame([
-            {
-                "customer_node_id": d.customer_node_id,
-                "period": d.period,
-                "demand_tonnes": d.demand_tonnes
-            }
-            for d in self.db.query(DemandForecast).all()
-        ])
+        # Convert to pandas DataFrames for compatibility with existing code
+        plants_df = pd.DataFrame(dataset["plants"])
+        production_df = pd.DataFrame(dataset["production_capacity"])
+        routes_df = pd.DataFrame(dataset["transport_routes"])
+        demand_df = pd.DataFrame(dataset["demand_forecast"])
+        inventory_df = pd.DataFrame(dataset["initial_inventory"])
+        safety_stock_df = pd.DataFrame(dataset["safety_stock_policies"])
         
         # Apply scenario parameters
         if scenario_parameters:
             demand_multiplier = scenario_parameters.get("demand_multiplier", 1.0)
-            demand_df["demand_tonnes"] *= demand_multiplier
+            if demand_multiplier != 1.0:
+                logger.info(f"Applying demand multiplier: {demand_multiplier}")
+                demand_df["demand_tonnes"] *= demand_multiplier
             
             capacity_multiplier = scenario_parameters.get("capacity_multiplier", 1.0)
-            production_df["max_capacity_tonnes"] *= capacity_multiplier
+            if capacity_multiplier != 1.0:
+                logger.info(f"Applying capacity multiplier: {capacity_multiplier}")
+                production_df["max_capacity_tonnes"] *= capacity_multiplier
         
-        # Load initial inventory
-        inventory_df = pd.DataFrame([
-            {
-                "location_id": i.location_id,
-                "initial_stock_tonnes": i.initial_stock_tonnes
-            }
-            for i in self.db.query(InitialInventory).all()
-        ])
-        
-        # Load safety stock
-        safety_stock_df = pd.DataFrame([
-            {
-                "location_id": s.location_id,
-                "safety_stock_tonnes": s.safety_stock_tonnes,
-                "penalty_cost_per_tonne": s.penalty_cost_per_tonne
-            }
-            for s in self.db.query(SafetyStockPolicy).all()
-        ])
+        logger.info(f"Loaded optimization data: {len(plants_df)} plants, {len(production_df)} capacity records, "
+                   f"{len(routes_df)} routes, {len(demand_df)} demand records")
         
         return {
             "plants": plants_df,
@@ -208,92 +169,53 @@ class OptimizationService:
         }
     
     def _build_optimization_model(self, data: Dict[str, Any]) -> pyo.ConcreteModel:
-        """Build Pyomo optimization model."""
+        """
+        PHASE 4: Build advanced Pyomo optimization model with all required constraints.
         
-        model = pyo.ConcreteModel()
+        This model includes:
+        - SBQ (minimum batch quantity) as hard constraints
+        - Integer trip counts
+        - Fixed trip costs per dispatch  
+        - Multi-period inventory balance
+        - Safety stock enforcement at end of each period
+        - Vehicle capacity constraints: Trips * vehicle_capacity >= shipped_volume
+        - SBQ constraints: SBQ <= shipped volume OR no shipment at all
+        """
         
-        # Sets
-        model.plants = pyo.Set(initialize=data["plants"]["plant_id"].unique())
-        model.periods = pyo.Set(initialize=data["production"]["period"].unique())
-        model.customers = pyo.Set(initialize=data["demand"]["customer_node_id"].unique())
-        model.routes = pyo.Set(initialize=[
-            (row["origin_plant_id"], row["destination_node_id"], row["transport_mode"])
-            for _, row in data["routes"].iterrows()
-        ])
+        logger.info("Building advanced optimization model with Phase 4 improvements")
         
-        # Parameters
-        model.demand = pyo.Param(model.customers, model.periods, initialize=0.0, mutable=True)
-        for _, row in data["demand"].iterrows():
-            model.demand[row["customer_node_id"], row["period"]] = row["demand_tonnes"]
+        # Prepare data in the format expected by model_builder
+        model_data = {
+            "plants": data["plants"],
+            "production_capacity_cost": data["production"],
+            "transport_routes_modes": data["routes"],
+            "demand_forecast": data["demand"],
+            "safety_stock_policy": data["safety_stock"],
+            "initial_inventory": data["inventory"],
+            "time_periods": sorted(data["production"]["period"].unique().tolist()) if not data["production"].empty else []
+        }
         
-        model.capacity = pyo.Param(model.plants, model.periods, initialize=0.0, mutable=True)
-        model.prod_cost = pyo.Param(model.plants, model.periods, initialize=0.0, mutable=True)
-        for _, row in data["production"].iterrows():
-            model.capacity[row["plant_id"], row["period"]] = row["max_capacity_tonnes"]
-            model.prod_cost[row["plant_id"], row["period"]] = row["variable_cost_per_tonne"]
+        # Configure penalty system for soft constraints (optional)
+        penalty_config = {
+            "unmet_demand": 10000.0,  # High penalty for unmet demand
+            "safety_stock_violation": 5000.0,  # Penalty for safety stock violations
+            "capacity_violation": 8000.0  # Penalty for capacity violations
+        }
         
-        model.transport_cost = pyo.Param(model.routes, initialize=0.0, mutable=True)
-        for _, row in data["routes"].iterrows():
-            route_key = (row["origin_plant_id"], row["destination_node_id"], row["transport_mode"])
-            model.transport_cost[route_key] = row["cost_per_tonne"]
+        # Build the advanced model using the model builder
+        model = build_clinker_model(model_data, penalty_config)
         
-        # Decision Variables
-        model.production = pyo.Var(model.plants, model.periods, domain=pyo.NonNegativeReals)
-        model.shipment = pyo.Var(model.routes, model.periods, domain=pyo.NonNegativeReals)
-        model.inventory = pyo.Var(model.plants.union(model.customers), model.periods, domain=pyo.NonNegativeReals)
-        
-        # Objective Function
-        def objective_rule(model):
-            production_cost = sum(
-                model.production[p, t] * model.prod_cost[p, t]
-                for p in model.plants for t in model.periods
-            )
-            
-            transport_cost = sum(
-                model.shipment[r, t] * model.transport_cost[r]
-                for r in model.routes for t in model.periods
-            )
-            
-            inventory_cost = sum(
-                model.inventory[l, t] * 10.0  # Holding cost per tonne
-                for l in model.plants.union(model.customers) for t in model.periods
-            )
-            
-            return production_cost + transport_cost + inventory_cost
-        
-        model.total_cost = pyo.Objective(rule=objective_rule, sense=pyo.minimize)
-        
-        # Constraints
-        def capacity_constraint_rule(model, p, t):
-            return model.production[p, t] <= model.capacity[p, t]
-        model.capacity_constraint = pyo.Constraint(model.plants, model.periods, rule=capacity_constraint_rule)
-        
-        def demand_constraint_rule(model, c, t):
-            inflow = sum(
-                model.shipment[p, c, m, t]
-                for p, dest, m in model.routes if dest == c
-            )
-            return inflow >= model.demand[c, t]
-        model.demand_constraint = pyo.Constraint(model.customers, model.periods, rule=demand_constraint_rule)
-        
-        def inventory_balance_rule(model, p, t):
-            if t == model.periods.first():
-                # Initial inventory (assume 1000 tonnes)
-                initial_inv = 1000.0
-            else:
-                prev_period = model.periods.prev(t)
-                initial_inv = model.inventory[p, prev_period]
-            
-            production = model.production[p, t]
-            
-            outflow = sum(
-                model.shipment[p, dest, m, t]
-                for origin, dest, m in model.routes if origin == p
-            )
-            
-            return model.inventory[p, t] == initial_inv + production - outflow
-        
-        model.inventory_balance = pyo.Constraint(model.plants, model.periods, rule=inventory_balance_rule)
+        logger.info("Advanced optimization model built successfully with:")
+        logger.info(f"- Plants: {len(model.I)}")
+        logger.info(f"- Customers: {len(model.J)}")
+        logger.info(f"- Time periods: {len(model.T)}")
+        logger.info(f"- Routes: {len(model.R)}")
+        logger.info(f"- Transport modes: {len(model.M)}")
+        logger.info("- Integer trip variables with vehicle capacity constraints")
+        logger.info("- SBQ (minimum batch quantity) hard constraints")
+        logger.info("- Multi-period inventory balance")
+        logger.info("- Safety stock enforcement")
+        logger.info("- Fixed trip costs per dispatch")
         
         return model
     
@@ -338,91 +260,189 @@ class OptimizationService:
         raise OptimizationError("All solvers failed to find a solution")
     
     def _extract_results(self, model: pyo.ConcreteModel, solver_result, model_data: Dict[str, Any]) -> Dict[str, Any]:
-        """Extract results from solved model."""
+        """
+        PHASE 4: Extract results from advanced optimization model.
+        
+        Extracts results from the improved model including:
+        - Integer trip counts
+        - SBQ compliance
+        - Safety stock levels
+        - Multi-period inventory profiles
+        - Fixed trip costs
+        """
         
         # Extract objective value
         total_cost = pyo.value(model.total_cost)
         
         # Extract production plan
         production_plan = {}
-        for p in model.plants:
-            production_plan[p] = {}
-            for t in model.periods:
-                production_plan[p][t] = pyo.value(model.production[p, t])
+        for i in model.I:  # Plants
+            production_plan[i] = {}
+            for t in model.T:  # Periods
+                production_plan[i][t] = pyo.value(model.prod[i, t])
         
-        # Extract shipment plan
+        # Extract shipment plan with trip information
         shipment_plan = {}
-        for r in model.routes:
-            for t in model.periods:
-                key = f"{r[0]}-{r[1]}-{r[2]}-{t}"
-                shipment_plan[key] = pyo.value(model.shipment[r, t])
+        trip_plan = {}
+        for (i, j, mode) in model.R:  # Routes
+            for t in model.T:  # Periods
+                shipment_key = f"{i}-{j}-{mode}-{t}"
+                trip_key = f"{i}-{j}-{mode}-{t}"
+                
+                shipment_qty = pyo.value(model.ship[i, j, mode, t])
+                trip_count = pyo.value(model.trips[i, j, mode, t])
+                use_mode = pyo.value(model.use_mode[i, j, mode, t])
+                
+                shipment_plan[shipment_key] = {
+                    "shipment_tonnes": shipment_qty,
+                    "trips": int(trip_count) if trip_count else 0,
+                    "mode_activated": bool(use_mode),
+                    "vehicle_capacity": pyo.value(model.vehicle_cap[i, j, mode]),
+                    "sbq_requirement": pyo.value(model.sbq[i, j, mode])
+                }
+                
+                trip_plan[trip_key] = {
+                    "trips": int(trip_count) if trip_count else 0,
+                    "shipment_tonnes": shipment_qty,
+                    "utilization": (shipment_qty / (trip_count * pyo.value(model.vehicle_cap[i, j, mode]))) 
+                                  if trip_count and pyo.value(model.vehicle_cap[i, j, mode]) > 0 else 0
+                }
         
-        # Extract inventory profile
+        # Extract inventory profile with safety stock compliance
         inventory_profile = {}
-        for l in model.plants.union(model.customers):
-            inventory_profile[l] = {}
-            for t in model.periods:
-                inventory_profile[l][t] = pyo.value(model.inventory[l, t])
+        safety_stock_compliance = {}
+        for i in model.I:  # Plants
+            inventory_profile[i] = {}
+            safety_stock_compliance[i] = {}
+            for t in model.T:  # Periods
+                inventory_level = pyo.value(model.inv[i, t])
+                safety_stock_req = pyo.value(model.ss[i])
+                
+                inventory_profile[i][t] = inventory_level
+                safety_stock_compliance[i][t] = {
+                    "inventory_level": inventory_level,
+                    "safety_stock_requirement": safety_stock_req,
+                    "compliance": inventory_level >= safety_stock_req,
+                    "shortage": max(0, safety_stock_req - inventory_level)
+                }
         
-        # Calculate cost breakdown
+        # Calculate detailed cost breakdown
         production_cost = sum(
-            pyo.value(model.production[p, t]) * pyo.value(model.prod_cost[p, t])
-            for p in model.plants for t in model.periods
+            pyo.value(model.prod[i, t]) * pyo.value(model.prod_cost[i, t])
+            for i in model.I for t in model.T
         )
         
         transport_cost = sum(
-            pyo.value(model.shipment[r, t]) * pyo.value(model.transport_cost[r])
-            for r in model.routes for t in model.periods
+            pyo.value(model.ship[i, j, mode, t]) * pyo.value(model.trans_cost[i, j, mode])
+            for (i, j, mode) in model.R for t in model.T
+        )
+        
+        # PHASE 4: Fixed trip costs (new in advanced model)
+        fixed_trip_cost = sum(
+            pyo.value(model.trips[i, j, mode, t]) * pyo.value(model.fixed_trip_cost[i, j, mode])
+            for (i, j, mode) in model.R for t in model.T
         )
         
         inventory_cost = sum(
-            pyo.value(model.inventory[l, t]) * 10.0
-            for l in model.plants.union(model.customers) for t in model.periods
+            pyo.value(model.inv[i, t]) * pyo.value(model.hold_cost[i])
+            for i in model.I for t in model.T
         )
         
-        # Calculate demand fulfillment
-        demand_fulfillment = {}
-        for c in model.customers:
-            demand_fulfillment[c] = {}
-            for t in model.periods:
-                demand = pyo.value(model.demand[c, t])
-                fulfilled = sum(
-                    pyo.value(model.shipment[p, c, m, t])
-                    for p, dest, m in model.routes if dest == c
-                )
-                demand_fulfillment[c][t] = {
-                    "demand": demand,
-                    "fulfilled": min(fulfilled, demand),
-                    "backorder": max(0, demand - fulfilled)
-                }
+        # Calculate penalty costs (if penalty variables exist)
+        penalty_cost = 0.0
+        unmet_demand_total = 0.0
+        safety_violations_total = 0.0
         
-        # Calculate service level
-        total_demand = sum(pyo.value(model.demand[c, t]) for c in model.customers for t in model.periods)
-        total_fulfilled = sum(
-            min(
-                sum(pyo.value(model.shipment[p, c, m, t]) for p, dest, m in model.routes if dest == c),
-                pyo.value(model.demand[c, t])
+        if hasattr(model, 'unmet_demand'):
+            unmet_demand_total = sum(
+                pyo.value(model.unmet_demand[j, t])
+                for j in model.J for t in model.T
             )
-            for c in model.customers for t in model.periods
-        )
-        service_level = total_fulfilled / total_demand if total_demand > 0 else 1.0
+            penalty_cost += unmet_demand_total * 10000.0  # Penalty rate
+        
+        if hasattr(model, 'ss_violation'):
+            safety_violations_total = sum(
+                pyo.value(model.ss_violation[i, t])
+                for i in model.I for t in model.T
+            )
+            penalty_cost += safety_violations_total * 5000.0  # Penalty rate
+        
+        # Calculate demand fulfillment metrics
+        demand_fulfillment = {}
+        total_demand = 0.0
+        total_fulfilled = 0.0
+        
+        for j in model.J:  # Customers
+            demand_fulfillment[j] = {}
+            for t in model.T:  # Periods
+                demand_qty = pyo.value(model.demand[j, t])
+                fulfilled_qty = sum(
+                    pyo.value(model.ship[i, j2, mode, t])
+                    for (i, j2, mode) in model.R if j2 == j
+                )
+                
+                # Account for unmet demand if penalty variables exist
+                unmet_qty = 0.0
+                if hasattr(model, 'unmet_demand'):
+                    unmet_qty = pyo.value(model.unmet_demand[j, t])
+                
+                demand_fulfillment[j][t] = {
+                    "demand": demand_qty,
+                    "fulfilled": fulfilled_qty,
+                    "unmet": unmet_qty,
+                    "fulfillment_rate": (fulfilled_qty / demand_qty) if demand_qty > 0 else 1.0
+                }
+                
+                total_demand += demand_qty
+                total_fulfilled += fulfilled_qty
+        
+        # Calculate overall service level
+        service_level = (total_fulfilled / total_demand) if total_demand > 0 else 1.0
+        
+        # Calculate SBQ compliance metrics
+        sbq_compliance = {}
+        for (i, j, mode) in model.R:
+            for t in model.T:
+                shipment_qty = pyo.value(model.ship[i, j, mode, t])
+                sbq_req = pyo.value(model.sbq[i, j, mode])
+                use_mode = pyo.value(model.use_mode[i, j, mode, t])
+                
+                key = f"{i}-{j}-{mode}-{t}"
+                sbq_compliance[key] = {
+                    "shipment_tonnes": shipment_qty,
+                    "sbq_requirement": sbq_req,
+                    "mode_activated": bool(use_mode),
+                    "sbq_compliant": (shipment_qty >= sbq_req) if use_mode else True,
+                    "violation": max(0, sbq_req - shipment_qty) if use_mode else 0
+                }
         
         return {
             "total_cost": total_cost,
             "production_cost": production_cost,
             "transport_cost": transport_cost,
+            "fixed_trip_cost": fixed_trip_cost,  # PHASE 4: New cost component
             "inventory_cost": inventory_cost,
-            "penalty_cost": 0.0,  # No penalties in this simple model
+            "penalty_cost": penalty_cost,
             "production_plan": production_plan,
             "shipment_plan": shipment_plan,
+            "trip_plan": trip_plan,  # PHASE 4: New trip information
             "inventory_profile": inventory_profile,
+            "safety_stock_compliance": safety_stock_compliance,  # PHASE 4: New compliance tracking
             "demand_fulfillment": demand_fulfillment,
+            "sbq_compliance": sbq_compliance,  # PHASE 4: New SBQ compliance tracking
             "service_level": service_level,
-            "stockout_events": 0  # Calculate from demand fulfillment
+            "unmet_demand_total": unmet_demand_total,
+            "safety_violations_total": safety_violations_total,
+            "stockout_events": int(unmet_demand_total > 0.001)
         }
     
     def _save_results(self, run_id: str, results: Dict[str, Any], solver_result):
-        """Save optimization results to database."""
+        """
+        PHASE 4: Save advanced optimization results to database.
+        
+        Saves results from the improved model including trip plans,
+        SBQ compliance, and safety stock tracking.
+        """
         
         opt_results = OptimizationResults(
             run_id=run_id,
@@ -439,10 +459,38 @@ class OptimizationService:
             stockout_events=results["stockout_events"]
         )
         
+        # PHASE 4: Add new result components to the JSON fields
+        if hasattr(opt_results, 'additional_metrics'):
+            opt_results.additional_metrics = {
+                "fixed_trip_cost": results.get("fixed_trip_cost", 0.0),
+                "trip_plan": results.get("trip_plan", {}),
+                "safety_stock_compliance": results.get("safety_stock_compliance", {}),
+                "sbq_compliance": results.get("sbq_compliance", {}),
+                "unmet_demand_total": results.get("unmet_demand_total", 0.0),
+                "safety_violations_total": results.get("safety_violations_total", 0.0)
+            }
+        else:
+            # Store in shipment_plan as extended data if additional_metrics field doesn't exist
+            extended_shipment_plan = results["shipment_plan"].copy()
+            extended_shipment_plan["_metadata"] = {
+                "fixed_trip_cost": results.get("fixed_trip_cost", 0.0),
+                "trip_plan": results.get("trip_plan", {}),
+                "safety_stock_compliance": results.get("safety_stock_compliance", {}),
+                "sbq_compliance": results.get("sbq_compliance", {}),
+                "unmet_demand_total": results.get("unmet_demand_total", 0.0),
+                "safety_violations_total": results.get("safety_violations_total", 0.0)
+            }
+            opt_results.shipment_plan = extended_shipment_plan
+        
         self.db.add(opt_results)
         self.db.commit()
         
-        logger.info(f"Saved optimization results for run {run_id}")
+        logger.info(f"Saved advanced optimization results for run {run_id}")
+        logger.info(f"- Total cost: {results['total_cost']:,.2f}")
+        logger.info(f"- Fixed trip cost: {results.get('fixed_trip_cost', 0):,.2f}")
+        logger.info(f"- Service level: {results['service_level']:.1%}")
+        logger.info(f"- Unmet demand: {results.get('unmet_demand_total', 0):,.2f} tonnes")
+        logger.info(f"- Safety violations: {results.get('safety_violations_total', 0):,.2f} tonnes")
     
     def get_kpi_data(self, scenario_name: str) -> Optional[Dict[str, Any]]:
         """Get KPI data for the latest run of a scenario."""

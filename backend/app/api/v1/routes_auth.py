@@ -16,7 +16,12 @@ oauth2_scheme = OAuth2PasswordBearer(tokenUrl=f"{settings.API_V1_STR}/auth/login
 
 # Stub user lookup; replace with real user model later
 def fake_user_lookup(username: str):
-    # TODO: query real user table
+    """
+    PHASE 6: Placeholder user lookup for development.
+    
+    This will be replaced with real user model queries when the authentication
+    system is fully implemented with proper user management.
+    """
     if username == "admin":
         return {"username": "admin", "role": "admin", "hashed_password": "$2b$12$placeholder"}  # dummy
     return None
@@ -37,7 +42,12 @@ def login(
     form_data: OAuth2PasswordRequestForm = Depends(),
     db: Session = Depends(get_db),
 ):
-    # TODO: authenticate against real user table
+    """
+    PHASE 6: Authenticate user with placeholder implementation.
+    
+    This endpoint provides basic authentication functionality for development.
+    Will be enhanced with proper user management and security features.
+    """
     user = fake_user_lookup(form_data.username)
     if not user or not verify_password(form_data.password, user["hashed_password"]):
         raise HTTPException(
@@ -54,7 +64,12 @@ def login(
 
 @router.get("/me", response_model=User)
 def read_users_me(current_user: dict = Depends(get_current_user)):
-    # TODO: map to User schema
+    """
+    PHASE 6: Get current user information.
+    
+    Returns current user details. Will be enhanced when full user management
+    system is implemented with proper user profiles and permissions.
+    """
     return User(
         id=1,
         username=current_user["username"],

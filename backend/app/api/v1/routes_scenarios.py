@@ -1,6 +1,6 @@
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
-from typing import List, Dict, Any
+from typing import List, Dict, Any, Optional
 import logging
 
 import pandas as pd
@@ -17,6 +17,8 @@ from app.db.models import (
 from app.schemas.scenario import ScenarioMetadata, ScenarioMetadataCreate, ScenarioMetadataUpdate
 from app.services.scenarios.scenario_generator import ScenarioConfig
 from app.services.scenarios.scenario_runner import run_batch_scenarios_from_configs
+from app.services.scenario_crud_service import scenario_service
+from app.services.crud_service import create_standardized_response, create_paginated_response
 from app.services.audit_service import audit_timer
 from app.utils.exceptions import DataValidationError, OptimizationError
 
@@ -26,34 +28,145 @@ logger = logging.getLogger(__name__)
 router = APIRouter()
 
 
-@router.post("/", response_model=ScenarioMetadata)
+@router.post("/", response_model=Dict[str, Any])
 def create_scenario(scenario: ScenarioMetadataCreate, db: Session = Depends(get_db)):
-    # TODO: implement service layer
-    raise HTTPException(status_code=501, detail="Not implemented")
+    """
+    PHASE 3: Create a new scenario metadata record.
+    
+    Creates scenario metadata for tracking optimization scenarios.
+    Validates input and ensures unique scenario names.
+    """
+    try:
+        new_scenario = scenario_service.create_scenario(scenario)
+        return create_standardized_response(
+            data=new_scenario.dict(),
+            message=f"Created scenario '{scenario.name}'",
+            status_code=201
+        )
+    except DataValidationError as e:
+        if "already exists" in str(e):
+            raise HTTPException(status_code=409, detail=str(e))
+        raise HTTPException(status_code=400, detail=str(e))
+    except Exception as e:
+        logger.error(f"Error creating scenario: {e}")
+        raise HTTPException(status_code=500, detail="Failed to create scenario")
 
 
-@router.get("/", response_model=List[ScenarioMetadata])
-def list_scenarios(db: Session = Depends(get_db)):
-    # TODO: implement service layer
-    raise HTTPException(status_code=501, detail="Not implemented")
+@router.get("/", response_model=Dict[str, Any])
+def list_scenarios(
+    skip: int = Query(0, ge=0, description="Number of records to skip"),
+    limit: int = Query(100, ge=1, le=1000, description="Maximum number of records to return"),
+    status: Optional[str] = Query(None, description="Filter by status"),
+    created_by: Optional[str] = Query(None, description="Filter by creator"),
+    db: Session = Depends(get_db)
+):
+    """
+    PHASE 3: List scenarios with pagination and filtering.
+    
+    Returns paginated list of scenario metadata with optional filtering
+    by status and creator.
+    """
+    try:
+        result = scenario_service.list_scenarios(
+            skip=skip, 
+            limit=limit,
+            status_filter=status,
+            created_by_filter=created_by
+        )
+        
+        return create_paginated_response(
+            items=[item.dict() for item in result["items"]],
+            total=result["total"],
+            skip=result["skip"],
+            limit=result["limit"],
+            has_next=result["has_next"],
+            has_prev=result["has_prev"],
+            message=f"Retrieved {len(result['items'])} scenarios"
+        )
+    except DataValidationError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    except Exception as e:
+        logger.error(f"Error listing scenarios: {e}")
+        raise HTTPException(status_code=500, detail="Failed to retrieve scenarios")
 
 
-@router.get("/{scenario_name}", response_model=ScenarioMetadata)
+@router.get("/{scenario_name}", response_model=Dict[str, Any])
 def get_scenario(scenario_name: str, db: Session = Depends(get_db)):
-    # TODO: implement service layer
-    raise HTTPException(status_code=501, detail="Not implemented")
+    """
+    PHASE 3: Get a specific scenario by name.
+    
+    Returns detailed scenario metadata including parameters and status.
+    """
+    try:
+        scenario = scenario_service.get_scenario(scenario_name)
+        if not scenario:
+            raise HTTPException(status_code=404, detail="Scenario not found")
+        
+        return create_standardized_response(
+            data=scenario.dict(),
+            message=f"Retrieved scenario '{scenario_name}'"
+        )
+    except HTTPException:
+        raise
+    except DataValidationError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    except Exception as e:
+        logger.error(f"Error getting scenario {scenario_name}: {e}")
+        raise HTTPException(status_code=500, detail="Failed to retrieve scenario")
 
 
-@router.put("/{scenario_name}", response_model=ScenarioMetadata)
-def update_scenario(scenario_name: str, scenario: ScenarioMetadataUpdate, db: Session = Depends(get_db)):
-    # TODO: implement service layer
-    raise HTTPException(status_code=501, detail="Not implemented")
+@router.put("/{scenario_name}", response_model=Dict[str, Any])
+def update_scenario(
+    scenario_name: str, 
+    scenario: ScenarioMetadataUpdate, 
+    db: Session = Depends(get_db)
+):
+    """
+    PHASE 3: Update an existing scenario.
+    
+    Updates scenario metadata. Name cannot be changed after creation.
+    """
+    try:
+        updated_scenario = scenario_service.update_scenario(scenario_name, scenario)
+        if not updated_scenario:
+            raise HTTPException(status_code=404, detail="Scenario not found")
+        
+        return create_standardized_response(
+            data=updated_scenario.dict(),
+            message=f"Updated scenario '{scenario_name}'"
+        )
+    except HTTPException:
+        raise
+    except DataValidationError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    except Exception as e:
+        logger.error(f"Error updating scenario {scenario_name}: {e}")
+        raise HTTPException(status_code=500, detail="Failed to update scenario")
 
 
-@router.delete("/{scenario_name}")
+@router.delete("/{scenario_name}", response_model=Dict[str, Any])
 def delete_scenario(scenario_name: str, db: Session = Depends(get_db)):
-    # TODO: implement service layer
-    raise HTTPException(status_code=501, detail="Not implemented")
+    """
+    PHASE 3: Delete a scenario by name.
+    
+    Permanently removes scenario metadata. This action cannot be undone.
+    """
+    try:
+        deleted = scenario_service.delete_scenario(scenario_name)
+        if not deleted:
+            raise HTTPException(status_code=404, detail="Scenario not found")
+        
+        return create_standardized_response(
+            data={"scenario_name": scenario_name, "deleted": True},
+            message=f"Deleted scenario '{scenario_name}'"
+        )
+    except HTTPException:
+        raise
+    except DataValidationError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    except Exception as e:
+        logger.error(f"Error deleting scenario {scenario_name}: {e}")
+        raise HTTPException(status_code=500, detail="Failed to delete scenario")
 
 
 def _load_optimization_data(db: Session) -> Dict[str, pd.DataFrame]:
@@ -149,7 +262,13 @@ def run_scenarios(
 	scenarios: List[ScenarioConfig],
 	db: Session = Depends(get_db),
 ):
-	"""Run one or more optimization scenarios based on ScenarioConfig list.
+	"""
+	PHASE 6: Run optimization scenarios with proper user context.
+	
+	Executes scenario optimization with audit logging and user tracking.
+	User context will be integrated when authentication system is implemented.
+	
+	Run one or more optimization scenarios based on ScenarioConfig list.
 
 	This is a thin API wrapper that:
 	- validates the request body via ScenarioConfig
@@ -157,7 +276,7 @@ def run_scenarios(
 	- delegates execution to the scenario runner
 	"""
 
-	user = "system"  # TODO: get from auth when available
+	user = "system"  # PHASE 6: Will be replaced with real user from auth context
 	metadata = {"scenario_count": len(scenarios), "scenario_names": [s.name for s in scenarios]}
 
 	with audit_timer(user, "run_scenarios", db, metadata) as timer:

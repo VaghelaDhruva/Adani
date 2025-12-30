@@ -85,3 +85,16 @@ alembic/versions/*.py
 *.p12
 secrets/
 certs/
+
+# Node.js
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.npm
+.yarn-integrity
+
+# Frontend build artifacts
+frontend/build/
+frontend/dist/
+*.tgz

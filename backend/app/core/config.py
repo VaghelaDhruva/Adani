@@ -54,6 +54,15 @@ class Settings(BaseSettings):
     MARKET_DATA_API_KEY: Optional[str] = None
     FUEL_PRICE_API_KEY: Optional[str] = None
     
+    # PHASE 2: Routing API Settings
+    OSRM_BASE_URL: str = "http://router.project-osrm.org"
+    ORS_BASE_URL: str = "https://api.openrouteservice.org"
+    ORS_API_KEY: Optional[str] = None
+    ROUTING_TIMEOUT_SECONDS: int = 30
+    ROUTING_MAX_RETRIES: int = 3
+    ROUTING_RETRY_DELAY: float = 1.0  # Initial delay in seconds
+    ROUTING_RETRY_BACKOFF: float = 2.0  # Exponential backoff multiplier
+    
     # Real-time Streams Settings
     IOT_BROKER_URL: Optional[str] = None
     IOT_USERNAME: Optional[str] = None

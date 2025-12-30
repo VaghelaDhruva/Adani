@@ -26,9 +26,10 @@ const TransportUtilizationTable = ({ data }: Props) => {
     {
       title: 'Route',
       key: 'route',
+      width: 280,
       render: (_, record: TransportUtilizationData) => (
         <div>
-          <div style={{ fontWeight: 600 }}>
+          <div style={{ fontWeight: 600, fontSize: '0.9rem', color: '#1f4e79' }}>
             {record.from} → {record.to}
           </div>
           <div style={{ fontSize: '0.8rem', color: '#666' }}>
@@ -41,6 +42,7 @@ const TransportUtilizationTable = ({ data }: Props) => {
       title: 'Trips',
       dataIndex: 'trips',
       key: 'trips',
+      width: 100,
       align: 'center',
       render: (trips: number) => (
         <span style={{ fontWeight: 600 }}>{trips}</span>
@@ -49,9 +51,10 @@ const TransportUtilizationTable = ({ data }: Props) => {
     {
       title: 'Capacity Used',
       key: 'capacity',
+      width: 160,
       align: 'center',
       render: (_, record: TransportUtilizationData) => (
-        <div style={{ width: '100px' }}>
+        <div style={{ width: '100%' }}>
           <Progress
             percent={record.capacity_used_pct * 100}
             size="small"
@@ -67,6 +70,7 @@ const TransportUtilizationTable = ({ data }: Props) => {
     {
       title: 'SBQ Compliance',
       key: 'compliance',
+      width: 160,
       align: 'center',
       render: (_, record: TransportUtilizationData) => (
         <div>
@@ -93,8 +97,9 @@ const TransportUtilizationTable = ({ data }: Props) => {
       pagination={false}
       size="small"
       rowKey={(record) => `${record.from}-${record.to}-${record.mode}`}
-      className="data-table"
+      className="data-table transport-utilization-table"
       style={{ fontSize: '0.9rem' }}
+      scroll={{ x: 700 }}
     />
   );
 };

@@ -196,15 +196,30 @@ const OptimizationConsole = () => {
                 name="scenario"
                 rules={[{ required: true, message: 'Please select a scenario' }]}
               >
-                <Select loading={scenariosLoading} placeholder="Select scenario">
+                <Select 
+                  loading={scenariosLoading} 
+                  placeholder="Select scenario"
+                  optionLabelProp="label"
+                >
                   {scenarios?.map(scenario => (
-                    <Option key={scenario.name} value={scenario.name}>
-                      <div>
-                        <Text strong>{scenario.name}</Text>
-                        <br />
-                        <Text type="secondary" style={{ fontSize: '0.8rem' }}>
+                    <Option 
+                      key={scenario.name} 
+                      value={scenario.name}
+                      label={scenario.name}
+                    >
+                      <div style={{ padding: '4px 0', lineHeight: '1.4' }}>
+                        <div style={{ fontWeight: 600, marginBottom: '2px' }}>
+                          {scenario.name}
+                        </div>
+                        <div style={{ 
+                          fontSize: '12px', 
+                          color: '#666', 
+                          lineHeight: '1.3',
+                          whiteSpace: 'normal',
+                          wordWrap: 'break-word'
+                        }}>
                           {scenario.description}
-                        </Text>
+                        </div>
                       </div>
                     </Option>
                   ))}
@@ -216,32 +231,50 @@ const OptimizationConsole = () => {
                 name="solver"
                 rules={[{ required: true, message: 'Please select a solver' }]}
               >
-                <Select>
-                  <Option value="PULP_CBC_CMD">
-                    <div>
-                      <Text strong>CBC (Default)</Text>
-                      <br />
-                      <Text type="secondary" style={{ fontSize: '0.8rem' }}>
+                <Select optionLabelProp="label">
+                  <Option value="PULP_CBC_CMD" label="CBC (Default)">
+                    <div style={{ padding: '4px 0', lineHeight: '1.4' }}>
+                      <div style={{ fontWeight: 600, marginBottom: '2px' }}>
+                        CBC (Default)
+                      </div>
+                      <div style={{ 
+                        fontSize: '12px', 
+                        color: '#666', 
+                        lineHeight: '1.3',
+                        whiteSpace: 'normal'
+                      }}>
                         Open source, reliable
-                      </Text>
+                      </div>
                     </div>
                   </Option>
-                  <Option value="HIGHS">
-                    <div>
-                      <Text strong>HiGHS</Text>
-                      <br />
-                      <Text type="secondary" style={{ fontSize: '0.8rem' }}>
+                  <Option value="HIGHS" label="HiGHS">
+                    <div style={{ padding: '4px 0', lineHeight: '1.4' }}>
+                      <div style={{ fontWeight: 600, marginBottom: '2px' }}>
+                        HiGHS
+                      </div>
+                      <div style={{ 
+                        fontSize: '12px', 
+                        color: '#666', 
+                        lineHeight: '1.3',
+                        whiteSpace: 'normal'
+                      }}>
                         High performance, faster
-                      </Text>
+                      </div>
                     </div>
                   </Option>
-                  <Option value="GUROBI">
-                    <div>
-                      <Text strong>Gurobi</Text>
-                      <br />
-                      <Text type="secondary" style={{ fontSize: '0.8rem' }}>
+                  <Option value="GUROBI" label="Gurobi">
+                    <div style={{ padding: '4px 0', lineHeight: '1.4' }}>
+                      <div style={{ fontWeight: 600, marginBottom: '2px' }}>
+                        Gurobi
+                      </div>
+                      <div style={{ 
+                        fontSize: '12px', 
+                        color: '#666', 
+                        lineHeight: '1.3',
+                        whiteSpace: 'normal'
+                      }}>
                         Commercial, premium
-                      </Text>
+                      </div>
                     </div>
                   </Option>
                 </Select>
@@ -389,15 +422,67 @@ const OptimizationConsole = () => {
       <Card title="Recent Optimization Runs" style={{ marginTop: 16 }}>
         {recentRuns && recentRuns.length > 0 ? (
           <div style={{ overflowX: 'auto' }}>
-            <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+            <table style={{ 
+              width: '100%', 
+              borderCollapse: 'collapse',
+              minWidth: '800px' // Ensure minimum width to prevent cramping
+            }}>
               <thead>
                 <tr style={{ borderBottom: '2px solid #f0f0f0' }}>
-                  <th style={{ padding: '12px', textAlign: 'left' }}>Run ID</th>
-                  <th style={{ padding: '12px', textAlign: 'left' }}>Scenario</th>
-                  <th style={{ padding: '12px', textAlign: 'center' }}>Status</th>
-                  <th style={{ padding: '12px', textAlign: 'right' }}>Total Cost</th>
-                  <th style={{ padding: '12px', textAlign: 'right' }}>Solve Time</th>
-                  <th style={{ padding: '12px', textAlign: 'left' }}>Started</th>
+                  <th style={{ 
+                    padding: '12px 8px', 
+                    textAlign: 'left',
+                    minWidth: '100px',
+                    fontSize: '14px',
+                    fontWeight: 600
+                  }}>
+                    Run ID
+                  </th>
+                  <th style={{ 
+                    padding: '12px 8px', 
+                    textAlign: 'left',
+                    minWidth: '120px',
+                    fontSize: '14px',
+                    fontWeight: 600
+                  }}>
+                    Scenario
+                  </th>
+                  <th style={{ 
+                    padding: '12px 8px', 
+                    textAlign: 'center',
+                    minWidth: '80px',
+                    fontSize: '14px',
+                    fontWeight: 600
+                  }}>
+                    Status
+                  </th>
+                  <th style={{ 
+                    padding: '12px 8px', 
+                    textAlign: 'right',
+                    minWidth: '120px',
+                    fontSize: '14px',
+                    fontWeight: 600
+                  }}>
+                    Total Cost
+                  </th>
+                  <th style={{ 
+                    padding: '12px 8px', 
+                    textAlign: 'right',
+                    minWidth: '100px',
+                    fontSize: '14px',
+                    fontWeight: 600
+                  }}>
+                    Solve Time
+                  </th>
+                  <th style={{ 
+                    padding: '12px 8px', 
+                    textAlign: 'left',
+                    minWidth: '140px',
+                    fontSize: '14px',
+                    fontWeight: 600
+                  }}>
+                    Started
+                  </th>
                 </tr>
               </thead>
               <tbody>
@@ -406,38 +491,78 @@ const OptimizationConsole = () => {
                     borderBottom: '1px solid #f0f0f0',
                     backgroundColor: index % 2 === 0 ? '#fafafa' : 'white'
                   }}>
-                    <td style={{ padding: '12px' }}>
-                      <Text code style={{ fontSize: '0.8rem' }}>
+                    <td style={{ 
+                      padding: '12px 8px',
+                      minWidth: '100px'
+                    }}>
+                      <Text code style={{ 
+                        fontSize: '12px',
+                        display: 'block',
+                        overflow: 'hidden',
+                        textOverflow: 'ellipsis'
+                      }}>
                         {run.run_id.slice(-8)}
                       </Text>
                     </td>
-                    <td style={{ padding: '12px' }}>
-                      <Text>{run.scenario_name}</Text>
+                    <td style={{ 
+                      padding: '12px 8px',
+                      minWidth: '120px'
+                    }}>
+                      <Text style={{ 
+                        fontSize: '13px',
+                        display: 'block',
+                        overflow: 'hidden',
+                        textOverflow: 'ellipsis'
+                      }}>
+                        {run.scenario_name}
+                      </Text>
                     </td>
-                    <td style={{ padding: '12px', textAlign: 'center' }}>
-                      <Tag color={run.status === 'completed' ? 'green' : 
-                                 run.status === 'failed' ? 'red' : 'blue'}>
+                    <td style={{ 
+                      padding: '12px 8px', 
+                      textAlign: 'center',
+                      minWidth: '80px'
+                    }}>
+                      <Tag 
+                        color={run.status === 'completed' ? 'green' : 
+                               run.status === 'failed' ? 'red' : 'blue'}
+                        style={{ fontSize: '11px' }}
+                      >
                         {run.status.toUpperCase()}
                       </Tag>
                     </td>
-                    <td style={{ padding: '12px', textAlign: 'right' }}>
-                      <Text>
+                    <td style={{ 
+                      padding: '12px 8px', 
+                      textAlign: 'right',
+                      minWidth: '120px'
+                    }}>
+                      <Text style={{ fontSize: '13px' }}>
                         {run.objective_value ? 
                           `₹${run.objective_value.toLocaleString()}` : 
                           '-'
                         }
                       </Text>
                     </td>
-                    <td style={{ padding: '12px', textAlign: 'right' }}>
-                      <Text>
+                    <td style={{ 
+                      padding: '12px 8px', 
+                      textAlign: 'right',
+                      minWidth: '100px'
+                    }}>
+                      <Text style={{ fontSize: '13px' }}>
                         {run.solve_time ? 
                           `${run.solve_time.toFixed(1)}s` : 
                           '-'
                         }
                       </Text>
                     </td>
-                    <td style={{ padding: '12px' }}>
-                      <Text type="secondary" style={{ fontSize: '0.9rem' }}>
+                    <td style={{ 
+                      padding: '12px 8px',
+                      minWidth: '140px'
+                    }}>
+                      <Text type="secondary" style={{ 
+                        fontSize: '12px',
+                        display: 'block',
+                        lineHeight: '1.3'
+                      }}>
                         {new Date(run.start_time).toLocaleString()}
                       </Text>
                     </td>

@@ -83,7 +83,7 @@ const Sidebar = () => {
           background: 'rgba(255, 255, 255, 0.05)',
         }}
       >
-        🏭 Clinker SCO
+        Adani
       </div>
       <Menu
         mode="inline"

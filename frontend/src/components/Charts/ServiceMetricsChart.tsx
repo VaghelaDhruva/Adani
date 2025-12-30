@@ -25,50 +25,58 @@ const ServiceMetricsChart = ({ data }: Props) => {
 
   const chartData: ChartDataItem[] = [
     {
+      name: 'Service Level',
+      value: data.service_level * 100,
+      fill: '#2e7d32',
+    },
+    {
       name: 'Demand Fulfillment',
       value: data.demand_fulfillment_rate * 100,
-      fill: '#2e7d32',
+      fill: '#1f4e79',
     },
     {
       name: 'On-Time Delivery',
       value: data.on_time_delivery * 100,
-      fill: '#1f4e79',
-    },
-    {
-      name: 'Service Level',
-      value: data.service_level * 100,
       fill: '#f57c00',
     },
   ];
 
   const CustomLegend = ({ payload }: { payload?: any[] }) => {
     return (
-      <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginTop: '16px' }}>
+      <div style={{ 
+        display: 'flex', 
+        flexDirection: 'column', 
+        gap: '4px', 
+        marginTop: '8px',
+        fontSize: '0.85rem'
+      }}>
         {payload?.map((entry: any, index: number) => (
-          <div key={index} style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <div key={index} style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
             <div
               style={{
-                width: '12px',
-                height: '12px',
+                width: '8px',
+                height: '8px',
                 backgroundColor: entry.color,
                 borderRadius: '2px',
+                flexShrink: 0
               }}
             />
-            <span style={{ fontSize: '0.9rem', color: '#666' }}>
+            <span style={{ color: '#666', lineHeight: '1.1' }}>
               {entry.value}: {entry.payload.value.toFixed(1)}%
             </span>
           </div>
         ))}
         {data.stockout_triggered && (
           <div style={{ 
-            marginTop: '8px', 
-            padding: '8px', 
+            marginTop: '4px', 
+            padding: '4px 6px', 
             background: '#fff3e0', 
-            borderRadius: '4px',
-            border: '1px solid #ffcc02'
+            borderRadius: '3px',
+            border: '1px solid #ffcc02',
+            fontSize: '0.75rem'
           }}>
-            <span style={{ fontSize: '0.9rem', color: '#f57c00', fontWeight: 600 }}>
-              ⚠️ Stockout Event Detected
+            <span style={{ color: '#f57c00', fontWeight: 600 }}>
+              ⚠️ Stockout Event
             </span>
           </div>
         )}
@@ -77,26 +85,34 @@ const ServiceMetricsChart = ({ data }: Props) => {
   };
 
   return (
-    <ResponsiveContainer width="100%" height={300}>
+    <ResponsiveContainer width="100%" height={280}>
       <RadialBarChart
         cx="50%"
         cy="50%"
-        innerRadius="20%"
-        outerRadius="80%"
+        innerRadius="30%"
+        outerRadius="85%"
         data={chartData}
         startAngle={90}
         endAngle={-270}
+        margin={{ top: 5, right: 5, bottom: 5, left: 5 }}
       >
         <RadialBar
           dataKey="value"
-          cornerRadius={4}
+          cornerRadius={3}
           fill="#8884d8"
+          label={false}
+          background={false}
         >
           {chartData.map((entry, index) => (
             <Cell key={`cell-${index}`} fill={entry.fill} />
           ))}
         </RadialBar>
-        <Legend content={CustomLegend} />
+        <Legend 
+          content={CustomLegend} 
+          verticalAlign="bottom"
+          align="center"
+          wrapperStyle={{ paddingTop: '5px' }}
+        />
       </RadialBarChart>
     </ResponsiveContainer>
   );

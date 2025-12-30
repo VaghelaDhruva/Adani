@@ -54,8 +54,6 @@ async def run_optimization(
     background_tasks: BackgroundTasks,
     db: Session = Depends(get_db)
 ):
-    """Run mathematical optimization with the actual optimization engine."""
-try:
     """Run mathematical optimization with STRICT data validation gating."""
     try:
         # CRITICAL: Check data validation status FIRST
@@ -86,7 +84,6 @@ try:
             "scenario_name": request.scenario_name,
             "solver": request.solver,
             "time_limit": request.time_limit,
-            "time_limit": request.time_limit,
             "validation_passed": True
         }
         
@@ -95,18 +92,12 @@ try:
             _run_optimization_task,
             run_id,
             request,
-            request,
             db
         )
         
         return {
             "run_id": run_id,
             "status": "queued",
-            "message": "Optimization started successfully",
-            "estimated_runtime": f"{request.time_limit} seconds (max)",
-            "timestamp": datetime.now().isoformat()
-        }
-        {
             "message": "Optimization started successfully - data validation passed",
             "estimated_runtime": f"{request.time_limit} seconds (max)",
             "timestamp": datetime.now().isoformat(),
@@ -120,23 +111,6 @@ try:
         raise HTTPException(status_code=500, detail=f"Failed to start optimization: {str(e)}")
 
 
-async def _run_optimization_task(run_id: str, request: OptimizationRequest):
-    """Background task to run the optimization."""
-    try:
-        # Update status to building model
-        running_optimizations[run_id]["status"] = "building_model"
-        running_optimizations[run_id]["progress"] = 10
-        
-        # Get input data
-        if request.use_sample_data or not request.input_data:
-            input_data = create_sample_input_data()
-            # Modify based on scenario
-            input_data = _modify_data_for_scenario(input_data, request.scenario_name)
-        else:
-            input_data = request.input_data
-        
-        # Build optimization model
-        optimization_engine.build_model(input_data)
 async def _run_optimization_task(run_id: str, request: OptimizationRequest, db: Session):
     """Background task to run the REAL optimization engine with validated data."""
     try:
@@ -172,20 +146,17 @@ async def _run_optimization_task(run_id: str, request: OptimizationRequest, db: 
         running_optimizations[run_id]["status"] = "solving"
         running_optimizations[run_id]["progress"] = 30
         
-        # Solve the model
-        result = optimization_engine.solve(
-            solver_name=request.solver,
-            time_limit=request.time_limit
         # Initialize and run REAL optimization engine
-        engine = OptimizationEngine()
-        engine.build_model(input_data)
+        from app.services.optimization_service import OptimizationService
+        engine = OptimizationService(db)
         
         # Update progress
         running_optimizations[run_id]["progress"] = 50
         
-        # Solve the model with specified solver
-        solve_results = engine.solve(
-            solver=request.solver,
+        # Run optimization
+        optimization_run_id = engine.run_optimization(
+            scenario_name=request.scenario_name,
+            solver_name=request.solver,
             time_limit=request.time_limit,
             mip_gap=request.mip_gap
         )
@@ -194,78 +165,14 @@ async def _run_optimization_task(run_id: str, request: OptimizationRequest, db: 
         running_optimizations[run_id]["status"] = "processing_results"
         running_optimizations[run_id]["progress"] = 90
         
-        # Get model statistics
-        model_stats = optimization_engine.get_model_statistics()
-        
-        # Prepare final result
-        final_result = {
-            "run_id": run_id,
-            "scenario_name": request.scenario_name,
-            "solver": request.solver,
-            "time_limit": request.time_limit,
-            "model_statistics": model_stats,
-            "optimization_result": result,
-            "input_data_summary": {
-                "plants_count": len(input_data.get("plants", [])),
-                "customers_count": len(input_data.get("customers", [])),
-                "periods_count": len(input_data.get("periods", [])),
-                "routes_count": len(input_data.get("routes", [])),
-                "total_demand": sum(d["demand_tonnes"] for d in input_data.get("demand", []))
-            },
-            "completion_time": datetime.now().isoformat()
-        }
-        
-        # Move to completed optimizations
-        completed_optimizations[run_id] = final_result
-        
-        # Update final status
-        running_optimizations[run_id]["status"] = "completed"
-        running_optimizations[run_id]["progress"] = 100
-        
-        running_optimizations[run_id]["progress"] = 80
-        
-        # Extract and format results
-        formatted_results = engine.extract_results()
-        
         # Store results in completed optimizations
         completed_optimizations[run_id] = {
             "status": "completed",
-            "results": formatted_results,
-            "solver_status": solve_results.get("solver_status"),
-            "objective_value": solve_results.get("objective_value"),
-            "solve_time": solve_results.get("solve_time"),
-            "solver_name": solve_results.get("solver_name"),
+            "optimization_run_id": optimization_run_id,
             "completed_at": datetime.now().isoformat(),
             "scenario_name": request.scenario_name,
+            "solver_name": request.solver,
             "data_source": "validated_clean_data"
-        }
-        
-        # Remove from running optimizations
-        if run_id in running_optimizations:
-            del running_optimizations[run_id]
-            
-        logger.info(f"Optimization {run_id} completed successfully with {solve_results.get('solver_status')} status")
-        
-    except Exception as e:
-        logger.error(f"Optimization {run_id} failed: {e}")
-        completed_optimizations[run_id] = {
-            "status": "failed",
-            "error_message": str(e),
-            "completed_at": datetime.now().isoformat(),
-            "scenario_name": request.scenario_name
-        }
-        if run_id in running_optimizations:
-            del running_optimizations[run_id]
-        formatted_results = engine.extract_results()
-        
-        # Store results in completed optimizations
-        completed_optimizations[run_id] = {
-            "status": "completed",
-            "results": formatted_results,
-            "solver_status": results.get("solver_status"),
-            "objective_value": results.get("objective_value"),
-            "solve_time": results.get("solve_time"),
-            "completed_at": datetime.now().isoformat()
         }
         
         # Remove from running optimizations
@@ -276,15 +183,11 @@ async def _run_optimization_task(run_id: str, request: OptimizationRequest, db: 
         
     except Exception as e:
         logger.error(f"Optimization {run_id} failed: {e}")
-        
-        # Update error status
-        running_optimizations[run_id]["status"] = "failed"
-        running_optimizations[run_id]["error_message"] = str(e)
-        running_optimizations[run_id]["progress"] = 0
         completed_optimizations[run_id] = {
             "status": "failed",
             "error_message": str(e),
-            "completed_at": datetime.now().isoformat()
+            "completed_at": datetime.now().isoformat(),
+            "scenario_name": request.scenario_name
         }
         if run_id in running_optimizations:
             del running_optimizations[run_id]

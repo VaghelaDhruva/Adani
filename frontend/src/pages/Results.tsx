@@ -39,41 +39,75 @@ const Results = () => {
 
   const productionColumns = [
     {
-      title: 'Plant',
+      title: 'Plant Name',
       dataIndex: 'plant_id',
       key: 'plant_id',
+      width: 250,
+      render: (plantName: string) => (
+        <div style={{ fontWeight: 600, color: '#1f4e79' }}>
+          {plantName}
+        </div>
+      ),
     },
     {
       title: 'Period',
       dataIndex: 'period',
       key: 'period',
+      width: 100,
+      align: 'center' as const,
     },
     {
       title: 'Production (tonnes)',
       dataIndex: 'production_tonnes',
       key: 'production_tonnes',
+      width: 150,
       align: 'right' as const,
-      render: (value: number) => value.toLocaleString(),
+      render: (value: number) => (
+        <span style={{ fontWeight: 600, color: '#2e7d32' }}>
+          {value.toLocaleString()}
+        </span>
+      ),
     },
   ];
 
   const shipmentColumns = [
     {
-      title: 'Origin',
+      title: 'Origin Plant',
       dataIndex: 'origin_plant_id',
       key: 'origin_plant_id',
+      width: 180,
+      fixed: 'left' as const,
+      render: (plantName: string) => (
+        <div style={{ 
+          fontWeight: 600, 
+          color: '#1f4e79', 
+          fontSize: '0.85rem',
+          background: 'white',
+          padding: '4px 0'
+        }}>
+          {plantName}
+        </div>
+      ),
     },
     {
-      title: 'Destination',
+      title: 'Customer',
       dataIndex: 'destination_node_id',
       key: 'destination_node_id',
+      width: 180,
+      render: (customerName: string) => (
+        <div style={{ fontWeight: 600, color: '#2e7d32', fontSize: '0.85rem' }}>
+          {customerName}
+        </div>
+      ),
     },
     {
       title: 'Mode',
       dataIndex: 'transport_mode',
       key: 'transport_mode',
+      width: 70,
+      align: 'center' as const,
       render: (mode: string) => (
-        <Tag color={mode === 'road' ? 'blue' : mode === 'rail' ? 'green' : 'orange'}>
+        <Tag color={mode === 'road' ? 'blue' : mode === 'rail' ? 'green' : 'orange'} size="small">
           {mode.toUpperCase()}
         </Tag>
       ),
@@ -82,13 +116,23 @@ const Results = () => {
       title: 'Period',
       dataIndex: 'period',
       key: 'period',
+      width: 80,
+      align: 'center' as const,
+      render: (period: string) => (
+        <span style={{ fontSize: '0.85rem' }}>{period}</span>
+      ),
     },
     {
       title: 'Shipment (tonnes)',
       dataIndex: 'shipment_tonnes',
       key: 'shipment_tonnes',
+      width: 130,
       align: 'right' as const,
-      render: (value: number) => value.toLocaleString(),
+      render: (value: number) => (
+        <span style={{ fontWeight: 600, color: '#f57c00', fontSize: '0.9rem' }}>
+          {value.toLocaleString()}
+        </span>
+      ),
     },
   ];
 
@@ -110,19 +154,25 @@ const Results = () => {
             <Select
               value={selectedRunId}
               onChange={setSelectedRunId}
-              style={{ width: 300 }}
+              style={{ width: 400 }}
               loading={runsLoading}
               placeholder="Select an optimization run"
+              optionLabelProp="label"
+              className="results-dropdown"
             >
               {completedRuns.map(run => (
-                <Option key={run.run_id} value={run.run_id}>
-                  <div>
-                    <Text strong>{run.scenario_name}</Text>
-                    <br />
-                    <Text type="secondary" style={{ fontSize: '0.8rem' }}>
-                      {new Date(run.start_time).toLocaleString()} - 
-                      {formatCurrency(run.objective_value || 0)}
-                    </Text>
+                <Option 
+                  key={run.run_id} 
+                  value={run.run_id}
+                  label={`${run.scenario_name} - ${new Date(run.start_time).toLocaleDateString()} - ${formatCurrency(run.objective_value || 0)}`}
+                >
+                  <div style={{ padding: '4px 0' }}>
+                    <div style={{ fontWeight: 600, color: '#1f4e79' }}>
+                      {run.scenario_name.toUpperCase()}
+                    </div>
+                    <div style={{ fontSize: '0.85rem', color: '#666', marginTop: '2px' }}>
+                      {new Date(run.start_time).toLocaleString()} • {formatCurrency(run.objective_value || 0)}
+                    </div>
                   </div>
                 </Option>
               ))}
@@ -235,6 +285,7 @@ const Results = () => {
                   pagination={{ pageSize: 10 }}
                   size="small"
                   rowKey={(record) => `${record.plant_id}-${record.period}`}
+                  className="results-table"
                 />
               </Card>
             </Col>
@@ -253,6 +304,8 @@ const Results = () => {
                   pagination={{ pageSize: 10 }}
                   size="small"
                   rowKey={(record) => `${record.origin_plant_id}-${record.destination_node_id}-${record.period}-${record.transport_mode}`}
+                  className="results-table"
+                  scroll={{ x: 'max-content' }}
                 />
               </Card>
             </Col>

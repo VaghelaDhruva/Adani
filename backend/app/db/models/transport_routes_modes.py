@@ -7,7 +7,7 @@ class TransportRoutesModes(Base):
     __tablename__ = "transport_routes_modes"
 
     id = Column(Integer, primary_key=True, index=True)
-    origin_plant_id = Column(String, ForeignKey("plant_master.plant_id"), nullable=False)
+    origin_plant_id = Column(String, ForeignKey("plant_master.plant_id", ondelete="CASCADE"), nullable=False)
     destination_node_id = Column(String, nullable=False)  # could be plant or customer
     transport_mode = Column(String, nullable=False)  # road, rail, sea, barge
     distance_km = Column(Float)

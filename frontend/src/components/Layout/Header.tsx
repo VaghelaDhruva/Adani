@@ -65,7 +65,7 @@ const Header = () => {
       lineHeight: 1.25,  // <-- slightly taller line box
     }}
   >
-    Supply Chain Optimization Platform
+   Clinker Supply Chain Optimization Platform
   </Typography.Title>
 
   <Text

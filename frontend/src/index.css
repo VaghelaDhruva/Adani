@@ -487,3 +487,280 @@ code {
   color: #1565c0 !important;
   background: rgba(100, 181, 246, 0.1) !important;
 }
+
+/* ========= OPTIMIZATION CONSOLE FIXES ========= */
+
+/* Fix overlapping text in Select dropdowns */
+.ant-select-dropdown .ant-select-item {
+  padding: 8px 12px !important;
+  min-height: auto !important;
+  line-height: 1.4 !important;
+}
+
+.ant-select-dropdown .ant-select-item-option-content {
+  white-space: normal !important;
+  word-wrap: break-word !important;
+}
+
+.ant-select-dropdown .ant-select-item:hover {
+  background-color: #f5f5f5 !important;
+}
+
+/* Fix for overlapping text in dropdowns */
+.ant-select-item-option-content > div {
+  display: block !important;
+  width: 100% !important;
+}
+
+/* Ensure proper spacing in form items */
+.ant-form-item-label {
+  padding-bottom: 4px !important;
+}
+
+.ant-form-item-control {
+  margin-bottom: 8px !important;
+}
+
+/* Fix table responsiveness - removed global overflow-x to prevent double scroll bars */
+
+.ant-table-tbody > tr > td {
+  white-space: nowrap !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+}
+
+/* Progress bar spacing */
+.ant-progress {
+  margin: 8px 0 !important;
+}
+
+/* Alert spacing */
+.ant-alert {
+  margin-bottom: 16px !important;
+}
+
+/* Card content spacing */
+.ant-card-body {
+  padding: 20px !important;
+}
+
+/* Status display improvements */
+.ant-tag {
+  margin: 2px !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 4px !important;
+}
+
+/* Fix for Select dropdown height */
+.ant-select-dropdown {
+  max-height: 300px !important;
+}
+
+/* Ensure proper line height for multi-line content */
+.ant-select-item-option-content div {
+  line-height: 1.3 !important;
+  margin-bottom: 2px !important;
+}
+
+/* Fix for form layout spacing */
+.ant-row.ant-form-item {
+  margin-bottom: 16px !important;
+}
+
+/* ========= TRANSPORT UTILIZATION TABLE FIXES ========= */
+.chart-container .ant-table {
+  min-width: 600px !important; /* Ensure minimum width for all columns */
+  width: 100% !important;
+}
+
+.chart-container .ant-table-thead > tr > th,
+.chart-container .ant-table-tbody > tr > td {
+  white-space: nowrap !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+}
+
+/* Route column - allow more width */
+.chart-container .ant-table-thead > tr > th:first-child,
+.chart-container .ant-table-tbody > tr > td:first-child {
+  min-width: 200px !important;
+  max-width: 250px !important;
+}
+
+/* Trips column */
+.chart-container .ant-table-thead > tr > th:nth-child(2),
+.chart-container .ant-table-tbody > tr > td:nth-child(2) {
+  min-width: 80px !important;
+  width: 80px !important;
+}
+
+/* Capacity column */
+.chart-container .ant-table-thead > tr > th:nth-child(3),
+.chart-container .ant-table-tbody > tr > td:nth-child(3) {
+  min-width: 120px !important;
+  width: 120px !important;
+}
+
+/* Compliance column */
+.chart-container .ant-table-thead > tr > th:nth-child(4),
+.chart-container .ant-table-tbody > tr > td:nth-child(4) {
+  min-width: 140px !important;
+  width: 140px !important;
+}
+
+/* ========= RESULTS DASHBOARD FIXES ========= */
+.results-dropdown .ant-select-selector {
+  min-height: 50px !important;
+  padding: 8px 12px !important;
+}
+
+.results-dropdown .ant-select-selection-item {
+  display: flex !important;
+  align-items: center !important;
+  padding: 0 !important;
+}
+
+.results-dropdown .ant-select-dropdown {
+  border-radius: 8px !important;
+  box-shadow: 0 4px 12px rgba(31, 78, 121, 0.15) !important;
+}
+
+.results-dropdown .ant-select-item {
+  padding: 12px 16px !important;
+  border-bottom: 1px solid rgba(31, 78, 121, 0.1) !important;
+}
+
+.results-dropdown .ant-select-item:hover {
+  background-color: rgba(100, 181, 246, 0.1) !important;
+}
+
+.results-dropdown .ant-select-item-option-selected {
+  background-color: rgba(31, 78, 121, 0.1) !important;
+  font-weight: 600 !important;
+}
+
+/* Results tables styling */
+.results-table .ant-table-thead > tr > th {
+  background: linear-gradient(135deg, #1f4e79 0%, #1565c0 50%, #42a5f5 100%) !important;
+  color: white !important;
+  font-weight: 600 !important;
+  text-align: center !important;
+  padding: 8px 12px !important;
+}
+
+.results-table .ant-table-tbody > tr > td {
+  text-align: center !important;
+  font-weight: 500 !important;
+  padding: 8px 12px !important;
+}
+
+.results-table .ant-table-tbody > tr:hover > td {
+  background-color: rgba(100, 181, 246, 0.1) !important;
+}
+
+/* Fixed column styling to prevent text overlap */
+.results-table .ant-table-fixed-left {
+  z-index: 2 !important;
+}
+
+.results-table .ant-table-thead > tr > th.ant-table-cell-fix-left {
+  background: linear-gradient(135deg, #1f4e79 0%, #1565c0 50%, #42a5f5 100%) !important;
+  z-index: 3 !important;
+  box-shadow: 2px 0 4px rgba(0, 0, 0, 0.1) !important;
+}
+
+.results-table .ant-table-tbody > tr > td.ant-table-cell-fix-left {
+  background: white !important;
+  z-index: 2 !important;
+  box-shadow: 2px 0 4px rgba(0, 0, 0, 0.1) !important;
+}
+
+.results-table .ant-table-tbody > tr:hover > td.ant-table-cell-fix-left {
+  background: rgba(100, 181, 246, 0.1) !important;
+}
+
+/* Responsive adjustments for Results tables */
+@media (max-width: 1200px) {
+  .results-table .ant-table-tbody > tr > td,
+  .results-table .ant-table-thead > tr > th {
+    font-size: 0.8rem !important;
+    padding: 6px 8px !important;
+  }
+}
+
+/* ========= TRANSPORT UTILIZATION TABLE FIXES ========= */
+.transport-utilization-table {
+  width: 100% !important;
+  min-width: 700px !important;
+}
+
+.transport-utilization-table .ant-table-thead > tr > th {
+  background: linear-gradient(135deg, #1f4e79 0%, #1565c0 50%, #42a5f5 100%) !important;
+  color: white !important;
+  font-weight: 600 !important;
+  text-align: center !important;
+  padding: 8px 12px !important;
+  font-size: 0.9rem !important;
+}
+
+.transport-utilization-table .ant-table-tbody > tr > td {
+  text-align: center !important;
+  font-weight: 500 !important;
+  padding: 8px 12px !important;
+}
+
+.transport-utilization-table .ant-table-tbody > tr:hover > td {
+  background-color: rgba(100, 181, 246, 0.1) !important;
+}
+
+/* Ensure chart container allows horizontal scrolling only when needed */
+.chart-container {
+  overflow: visible !important;
+}
+
+.chart-container .ant-card-body {
+  overflow-x: auto !important;
+  overflow-y: visible !important;
+  padding: 16px !important;
+}
+
+/* Remove any conflicting table scroll settings */
+.transport-utilization-table .ant-table-body {
+  overflow-y: visible !important;
+  max-height: none !important;
+}
+
+.transport-utilization-table .ant-table-container {
+  overflow-y: visible !important;
+}
+
+/* Make progress bars more compact */
+.transport-utilization-table .ant-progress {
+  margin: 0 !important;
+}
+
+.transport-utilization-table .ant-progress-inner {
+  height: 8px !important;
+}
+
+/* Responsive adjustments for Transport Utilization table */
+@media (max-width: 1200px) {
+  .transport-utilization-table .ant-table-tbody > tr > td,
+  .transport-utilization-table .ant-table-thead > tr > th {
+    font-size: 0.8rem !important;
+    padding: 6px 8px !important;
+  }
+}
+
+/* Responsive table improvements */
+@media (max-width: 768px) {
+  .ant-table-tbody > tr > td {
+    font-size: 12px !important;
+    padding: 8px 4px !important;
+  }
+  
+  .ant-card-body {
+    padding: 16px !important;
+  }
+}
