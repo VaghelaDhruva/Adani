@@ -63,8 +63,9 @@ const Sidebar = () => {
     <Sider
       width={250}
       style={{
-        background: 'linear-gradient(180deg, #1f4e79 0%, #2e7d32 100%)',
-        boxShadow: '2px 0 8px rgba(0,0,0,0.15)',
+        background: 'linear-gradient(180deg, #1f4e79 0%, #1565c0 35%, #42a5f5 70%, #64b5f6 100%)',
+        boxShadow: '4px 0 16px rgba(31, 78, 121, 0.25)',
+        borderRight: '1px solid rgba(255, 255, 255, 0.1)',
       }}
     >
       <div
@@ -74,10 +75,12 @@ const Sidebar = () => {
           alignItems: 'center',
           justifyContent: 'center',
           color: 'white',
-          fontSize: '1.2rem',
+          fontSize: '1.3rem',
           fontWeight: 'bold',
-          borderBottom: '1px solid rgba(255,255,255,0.1)',
+          borderBottom: '1px solid rgba(255, 255, 255, 0.15)',
           marginBottom: 16,
+          textShadow: '0 2px 4px rgba(0, 0, 0, 0.3)',
+          background: 'rgba(255, 255, 255, 0.05)',
         }}
       >
         🏭 Clinker SCO

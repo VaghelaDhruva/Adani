@@ -4,9 +4,6 @@ Configuration settings for the application.
 
 import os
 from typing import Optional
-<<<<<<< HEAD
-from pydantic import BaseSettings
-=======
 
 try:
     from pydantic_settings import BaseSettings
@@ -22,7 +19,6 @@ except ImportError:
             class Config:
                 env_file = ".env"
                 case_sensitive = True
->>>>>>> d4196135 (Fixed Bug)
 
 
 class Settings(BaseSettings):
@@ -31,11 +27,8 @@ class Settings(BaseSettings):
     # Basic app settings
     PROJECT_NAME: str = "Clinker Supply Chain Optimization"
     API_V1_STR: str = "/api/v1"
-<<<<<<< HEAD
-=======
     LOG_LEVEL: str = "INFO"
     LOG_FORMAT: str = "text"
->>>>>>> d4196135 (Fixed Bug)
     
     # Database settings
     DATABASE_URL: str = "sqlite:///./clinker_supply_chain.db"

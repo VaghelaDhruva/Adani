@@ -1,12 +1,6 @@
 from fastapi import APIRouter, Depends, HTTPException, UploadFile, File, Query
 from sqlalchemy.orm import Session
-<<<<<<< HEAD
 from typing import List, Optional
-=======
-from typing import List, Optional, Dict, Any
-import logging
-from datetime import datetime
->>>>>>> d4196135 (Fixed Bug)
 
 from app.core.deps import get_db
 from app.services.ingestion.csv_ingestion import ingest_csv
@@ -18,10 +12,6 @@ from app.schemas.transport import TransportRoute, TransportRouteCreate, Transpor
 from app.schemas.inventory import SafetyStockPolicy, SafetyStockPolicyCreate, SafetyStockPolicyUpdate, InitialInventory, InitialInventoryCreate, InitialInventoryUpdate
 
 router = APIRouter()
-<<<<<<< HEAD
-=======
-logger = logging.getLogger(__name__)
->>>>>>> d4196135 (Fixed Bug)
 
 
 # Placeholder CRUD stubs; actual service layer will be added later
@@ -126,81 +116,3 @@ async def get_route(
     if result is None:
         raise HTTPException(status_code=404, detail="Route not found and external API unavailable")
     return result
-<<<<<<< HEAD
-=======
-
-
-@router.get("/validation-report")
-async def get_validation_report(db: Session = Depends(get_db)) -> Dict[str, Any]:
-    """
-    Get comprehensive data validation report.
-    Returns validation status for all data sources and any critical errors.
-    """
-    try:
-        # For now, return a mock validation report indicating all data is valid
-        # In a real implementation, this would run actual validation checks
-        
-        validation_report = {
-            "report_timestamp": datetime.utcnow().isoformat(),
-            "overall_status": "passed",
-            "critical_errors": 0,
-            "warnings": 0,
-            "validation_stages": [
-                {
-                    "stage_name": "Schema Validation",
-                    "status": "passed",
-                    "errors": [],
-                    "warnings": [],
-                    "row_level_errors": []
-                },
-                {
-                    "stage_name": "Business Rules",
-                    "status": "passed", 
-                    "errors": [],
-                    "warnings": [],
-                    "row_level_errors": []
-                },
-                {
-                    "stage_name": "Referential Integrity",
-                    "status": "passed",
-                    "errors": [],
-                    "warnings": [],
-                    "row_level_errors": []
-                },
-                {
-                    "stage_name": "Unit Consistency",
-                    "status": "passed",
-                    "errors": [],
-                    "warnings": [],
-                    "row_level_errors": []
-                },
-                {
-                    "stage_name": "Missing Data",
-                    "status": "passed",
-                    "errors": [],
-                    "warnings": [],
-                    "row_level_errors": []
-                }
-            ],
-            "data_sources": {
-                "plants": {"status": "valid", "record_count": 3, "last_updated": "2025-12-29T10:00:00Z"},
-                "demand_forecast": {"status": "valid", "record_count": 21, "last_updated": "2025-12-29T10:00:00Z"},
-                "transport_routes": {"status": "valid", "record_count": 9, "last_updated": "2025-12-29T10:00:00Z"},
-                "production_capacity": {"status": "valid", "record_count": 3, "last_updated": "2025-12-29T10:00:00Z"},
-                "safety_stock_policy": {"status": "valid", "record_count": 7, "last_updated": "2025-12-29T10:00:00Z"}
-            },
-            "summary": {
-                "total_records_validated": 43,
-                "validation_passed": True,
-                "optimization_ready": True,
-                "next_validation_due": "2025-12-30T10:00:00Z"
-            }
-        }
-        
-        logger.info("Generated validation report with all checks passed")
-        return validation_report
-        
-    except Exception as e:
-        logger.error(f"Failed to generate validation report: {e}")
-        raise HTTPException(status_code=500, detail=f"Failed to generate validation report: {str(e)}")
->>>>>>> d4196135 (Fixed Bug)

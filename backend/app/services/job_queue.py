@@ -16,13 +16,8 @@ settings = get_settings()
 # Initialize Celery app
 celery_app = Celery(
     "clinker_opt",
-<<<<<<< HEAD
-    broker=settings.BROKER_URL,
-    backend=settings.RESULT_BACKEND,
-=======
     broker=settings.REDIS_URL,
     backend=settings.REDIS_URL,
->>>>>>> d4196135 (Fixed Bug)
     include=["app.services.job_queue"],
 )
 

@@ -89,11 +89,11 @@ const Dashboard = () => {
               onChange={setSelectedScenario}
               style={{ width: 200 }}
               loading={scenariosLoading}
-              options={Array.isArray(scenarios) ? scenarios.map(scenario => ({
+              options={scenarios?.map(scenario => ({
                 key: scenario.name,
                 value: scenario.name,
-                label: `${scenario.name} - ${scenario.description}`
-              })) : []}
+                label: `${scenario.name} - ${scenario.description || scenario.name}`
+              })) || []}
             />
           </Space>
         </div>

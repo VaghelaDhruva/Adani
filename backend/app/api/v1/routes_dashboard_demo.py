@@ -3,10 +3,9 @@ Dashboard API Routes - Enterprise Grade
 
 Provides comprehensive endpoints for enterprise-ready dashboard system.
 All endpoints return structured data with proper error handling.
-<<<<<<< HEAD
-=======
+
 Now integrated with real optimization engine.
->>>>>>> d4196135 (Fixed Bug)
+
 """
 
 from typing import Dict, List, Any, Optional
@@ -18,19 +17,17 @@ import random
 
 from app.core.deps import get_db
 from app.utils.exceptions import DataValidationError, OptimizationError
-<<<<<<< HEAD
-=======
+
 from app.services.optimization_service import OptimizationService
 from app.services.data_validation_service import run_comprehensive_validation
 from app.services.kpi_calculator import get_latest_kpi_data, get_kpi_history
->>>>>>> d4196135 (Fixed Bug)
+
 
 router = APIRouter()
 logger = logging.getLogger(__name__)
 
 
-<<<<<<< HEAD
-=======
+
 @router.get("/kpi/dashboard/{scenario_name}")
 async def get_dashboard_kpis(
     scenario_name: str,
@@ -232,7 +229,7 @@ async def compare_scenarios(
         raise HTTPException(status_code=500, detail=f"Comparison failed: {str(e)}")
 
 
->>>>>>> d4196135 (Fixed Bug)
+
 def _generate_enterprise_kpi_data(scenario_name: str) -> Dict[str, Any]:
     """Generate comprehensive enterprise KPI data structure."""
     

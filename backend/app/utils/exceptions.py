@@ -1,4 +1,4 @@
-<<<<<<< HEAD
+
 from fastapi import HTTPException, status
 
 
@@ -20,7 +20,7 @@ class ExternalAPIError(ClinkerOptException):
 
 def raise_http_exception(detail: str, status_code: int = status.HTTP_400_BAD_REQUEST):
     raise HTTPException(status_code=status_code, detail=detail)
-=======
+
 """
 Custom exceptions for the supply chain optimization system.
 """
@@ -49,4 +49,4 @@ class ConfigurationError(Exception):
 class IntegrationError(Exception):
     """Raised when external integration fails."""
     pass
->>>>>>> d4196135 (Fixed Bug)
+

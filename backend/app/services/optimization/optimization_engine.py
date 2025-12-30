@@ -146,9 +146,7 @@ class OptimizationEngine:
                     var_name, lowBound=0, cat='Continuous'
                 )
         
-<<<<<<< HEAD
         logger.info(f"Created {len(self.variables)} variable groups")
-=======
     def solve(self, solver: str = "PULP_CBC_CMD", time_limit: int = 600, mip_gap: float = 0.01) -> Dict[str, Any]:
         """Solve the optimization model with specified solver."""
         try:
@@ -365,7 +363,6 @@ class OptimizationEngine:
     def _get_holding_cost(self, plant_id: str) -> float:
         """Get holding cost per tonne per period."""
         return 12.0  # INR per tonne per month
->>>>>>> d4196135 (Fixed Bug)
     
     def _create_objective(self, input_data: Dict[str, Any]) -> None:
         """Create the objective function to minimize total cost."""

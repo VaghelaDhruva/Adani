@@ -15,11 +15,8 @@ import asyncio
 from app.core.deps import get_db
 from app.services.integrations.erp_integration import erp_service
 from app.services.integrations.external_apis import external_api_service
-<<<<<<< HEAD
 from app.services.integrations.realtime_streams import realtime_service
-=======
 # from app.services.integrations.realtime_streams import realtime_service
->>>>>>> d4196135 (Fixed Bug)
 from app.services.integrations.automated_refresh import automated_refresh_service
 from app.utils.exceptions import IntegrationError
 

@@ -19,7 +19,13 @@ function App() {
       <Sidebar />
       <Layout>
         <Header />
-        <Content style={{ margin: '24px 16px', padding: 24, background: '#fff', borderRadius: 8 }}>
+        <Content style={{ 
+          margin: '24px 16px', 
+          padding: 24, 
+          background: 'transparent', 
+          borderRadius: 16,
+          minHeight: 'calc(100vh - 112px)' 
+        }}>
           <Routes>
             <Route path="/" element={<Dashboard />} />
             <Route path="/dashboard" element={<Dashboard />} />

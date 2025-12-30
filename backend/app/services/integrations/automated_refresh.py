@@ -19,17 +19,14 @@ from sqlalchemy.orm import Session
 import pandas as pd
 
 from app.core.config import get_settings
-<<<<<<< HEAD
 from app.db.base import SessionLocal
 from app.services.integrations.erp_integration import erp_service
 from app.services.integrations.external_apis import external_api_service
 from app.services.integrations.realtime_streams import realtime_service
-=======
 from app.db.session import SessionLocal
 from app.services.integrations.erp_integration import erp_service
 from app.services.integrations.external_apis import external_api_service
 # from app.services.integrations.realtime_streams import realtime_service
->>>>>>> d4196135 (Fixed Bug)
 from app.services.validation.data_quality import DataQualityService
 from app.utils.exceptions import IntegrationError
 

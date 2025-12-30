@@ -1,4 +1,4 @@
-<<<<<<< HEAD
+
 from typing import Dict, Tuple, Any
 
 Number = float
@@ -79,7 +79,7 @@ def compute_kpis(
         "stockout_risk": stockout_risk,
         "capacity_utilization": utilization,
     }
-=======
+
 """
 KPI Calculator Service
 
@@ -495,4 +495,4 @@ def get_kpi_history(db: Session, scenario_name: str, limit: int = 50) -> List[Di
         }
         for s in snapshots
     ]
->>>>>>> d4196135 (Fixed Bug)
+

@@ -2,11 +2,8 @@ from typing import Any, Dict, List
 
 import pandas as pd
 
-<<<<<<< HEAD
 from app.services.kpi_calculator import compute_kpis as compute_kpis_core
-=======
 from app.services.kpi_calculator import KPICalculator
->>>>>>> d4196135 (Fixed Bug)
 from app.services.optimization.model_builder import build_clinker_model
 from app.services.optimization.result_parser import extract_solution
 from app.services.optimization.solvers import solve_model
@@ -22,7 +19,6 @@ def _compute_kpis_from_solution(solution: Dict[str, Any]) -> Dict[str, Any]:
 	"solution" mapping. Missing keys default to empty mappings, which the
 	shared KPI calculator treats as zeros.
 	"""
-<<<<<<< HEAD
 	return compute_kpis_core(
 		costs=solution.get("costs", {}) or {},
 		demand=solution.get("demand", {}) or {},
@@ -30,7 +26,6 @@ def _compute_kpis_from_solution(solution: Dict[str, Any]) -> Dict[str, Any]:
 		plant_production=solution.get("plant_production", {}) or {},
 		plant_capacity=solution.get("plant_capacity", {}) or {},
 	)
-=======
 	# For now, return a simplified KPI structure
 	# This should be updated to use the proper KPICalculator when database session is available
 	return {
@@ -42,7 +37,6 @@ def _compute_kpis_from_solution(solution: Dict[str, Any]) -> Dict[str, Any]:
 		"cost_breakdown": solution.get("costs", {}),
 		"inventory_metrics": {"inventory_turns": 24.0}
 	}
->>>>>>> d4196135 (Fixed Bug)
 
 
 def _build_model_input_for_scenario(

@@ -7,12 +7,9 @@ from datetime import datetime
 from app.core.deps import get_db
 from app.schemas.kpi import KPIDashboard, ScenarioComparison
 from app.services.audit_service import audit_timer
-<<<<<<< HEAD
-=======
 from app.services.optimization_service import OptimizationService
 from app.services.kpi_calculator import get_latest_kpi_data, get_kpi_history
 from app.utils.exceptions import DataValidationError, OptimizationError
->>>>>>> d4196135 (Fixed Bug)
 
 router = APIRouter()
 logger = logging.getLogger(__name__)
@@ -26,7 +23,6 @@ async def get_kpi_dashboard(
 ) -> Dict[str, Any]:
     """
     Return KPIs for a given scenario with enterprise-grade error handling.
-<<<<<<< HEAD
     """
     try:
         with audit_timer("system", "kpi_dashboard_fetch", db):
@@ -149,24 +145,20 @@ async def get_kpi_dashboard(
                 }
             
             return kpis
-=======
     Now uses real optimization results instead of mock data.
     """
     try:
         # For now, directly return mock data to avoid service issues
         logger.info(f"Returning mock KPI data for scenario {scenario_name}")
         return _generate_mock_kpi_data(scenario_name, run_id)
->>>>>>> d4196135 (Fixed Bug)
             
     except Exception as e:
         logger.error(f"Failed to fetch KPI dashboard for {scenario_name}: {e}")
         raise HTTPException(status_code=500, detail=f"Internal server error: {str(e)}")
 
 
-<<<<<<< HEAD
-=======
 def _generate_mock_kpi_data(scenario_name: str, run_id: Optional[str] = None) -> Dict[str, Any]:
-    """Generate mock KPI data for scenarios that haven't been optimized yet."""
+    """Generate mock KPI data for scenarios that havent been optimized yet."""
     
     if scenario_name == "base":
         return {
@@ -311,7 +303,6 @@ def _generate_mock_kpi_data(scenario_name: str, run_id: Optional[str] = None) ->
         }
 
 
->>>>>>> d4196135 (Fixed Bug)
 @router.post("/compare")
 async def compare_scenarios(
     scenario_names: List[str],
@@ -376,9 +367,7 @@ async def compare_scenarios(
             
     except Exception as e:
         logger.error(f"Failed to compare scenarios: {e}")
-<<<<<<< HEAD
         raise HTTPException(status_code=500, detail=f"Comparison failed: {str(e)}")
-=======
         raise HTTPException(status_code=500, detail=f"Internal server error: {str(e)}")
 
 
@@ -516,7 +505,6 @@ def _get_scenario_description(scenario_name: str) -> str:
         "transport_disruption": "Transport disruption scenario (35% cost increase)"
     }
     return descriptions.get(scenario_name, "Custom scenario")
->>>>>>> d4196135 (Fixed Bug)
 
 
 @router.get("/summary")
