@@ -6,20 +6,25 @@ from app.core.config import get_settings
 from app.core.logging_config import setup_logging, configure_uvicorn_logging
 from app.api.v1 import (
     routes_auth,
-    routes_dashboard_demo,
+    routes_dashboard_simple,  # Use simple version instead of routes_dashboard_demo
     routes_data,
     routes_health,
-    routes_jobs,
-    routes_kpi,
-    routes_optimization,
-    routes_optimize,
+    # routes_jobs,  # Temporarily disabled - might have heavy imports
+    # routes_kpi,   # Temporarily disabled - might have heavy imports
+    # routes_optimization,  # Temporarily disabled - has heavy imports
+    # routes_optimize,      # Temporarily disabled - has heavy imports
     routes_runs,
     routes_scenarios,
     # routes_integrations,  # Temporarily disabled due to aioredis/distutils issue
 )
 
-# Import the new optimization routes
-# from app.api.v1 import routes_optimization as routes_optimization_new
+# Import the new production-ready optimization routes (optional - can use old routes_optimize)
+try:
+    from app.api.v1 import routes_optimize_v2
+    USE_V2_ROUTES = True
+except ImportError:
+    USE_V2_ROUTES = False
+    print("Note: routes_optimize_v2 not available, using routes_optimize")
 
 setup_logging()
 settings = get_settings()
@@ -43,13 +48,9 @@ app.add_middleware(
 # Include routers
 app.include_router(routes_health.router, prefix=settings.API_V1_STR, tags=["health"])
 app.include_router(routes_auth.router, prefix=f"{settings.API_V1_STR}/auth", tags=["auth"])
-app.include_router(routes_dashboard_demo.router, prefix=f"{settings.API_V1_STR}/dashboard", tags=["dashboard"])
+app.include_router(routes_dashboard_simple.router, prefix=f"{settings.API_V1_STR}/dashboard", tags=["dashboard"])
 app.include_router(routes_data.router, prefix=f"{settings.API_V1_STR}/data", tags=["data"])
 app.include_router(routes_scenarios.router, prefix=f"{settings.API_V1_STR}/scenarios", tags=["scenarios"])
-app.include_router(routes_optimization.router, prefix=f"{settings.API_V1_STR}/optimization", tags=["optimization"])
-app.include_router(routes_optimize.router, prefix=f"{settings.API_V1_STR}/optimize", tags=["optimize"])
-app.include_router(routes_kpi.router, prefix=f"{settings.API_V1_STR}/kpi", tags=["kpi"])
-app.include_router(routes_jobs.router, prefix=f"{settings.API_V1_STR}/jobs", tags=["jobs"])
 app.include_router(routes_runs.router, prefix=f"{settings.API_V1_STR}", tags=["runs"])
 # app.include_router(routes_integrations.router, prefix=f"{settings.API_V1_STR}/integrations", tags=["integrations"])  # Temporarily disabled
 

@@ -29,12 +29,16 @@ class Settings(BaseSettings):
     API_V1_STR: str = "/api/v1"
     LOG_LEVEL: str = "INFO"
     LOG_FORMAT: str = "text"
+    DEBUG: bool = False
     
     # Database settings
     DATABASE_URL: str = "sqlite:///./clinker_supply_chain.db"
     
     # Security settings
-    SECRET_KEY: str = "your-secret-key-here"
+    SECRET_KEY: str = "your-secret-key-here-change-in-production"
+    JWT_SECRET_KEY: str = "your-secret-key-here-change-in-production"  # For JWT tokens
+    JWT_ALGORITHM: str = "HS256"
+    JWT_EXPIRE_MINUTES: int = 30
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 30
     
     # ERP Integration Settings
@@ -55,6 +59,7 @@ class Settings(BaseSettings):
     FUEL_PRICE_API_KEY: Optional[str] = None
     
     # PHASE 2: Routing API Settings
+    ROUTING_PROVIDER: str = "auto"
     OSRM_BASE_URL: str = "http://router.project-osrm.org"
     ORS_BASE_URL: str = "https://api.openrouteservice.org"
     ORS_API_KEY: Optional[str] = None
@@ -62,6 +67,20 @@ class Settings(BaseSettings):
     ROUTING_MAX_RETRIES: int = 3
     ROUTING_RETRY_DELAY: float = 1.0  # Initial delay in seconds
     ROUTING_RETRY_BACKOFF: float = 2.0  # Exponential backoff multiplier
+    
+    # Demand Streaming Settings
+    DEMAND_SOURCE_TYPE: str = "rest"
+    DEMAND_POLL_URL: str = "https://api.example.com/demand"
+    DEMAND_POLL_INTERVAL_SECONDS: int = 300
+    
+    # Kafka Settings
+    KAFKA_BOOTSTRAP_SERVERS: str = "localhost:9092"
+    KAFKA_DEMAND_TOPIC: str = "clinker_demand"
+    KAFKA_GROUP_ID: str = "clinker-consumer"
+    
+    # Celery Settings
+    BROKER_URL: str = "redis://localhost:6379/0"
+    RESULT_BACKEND: str = "redis://localhost:6379/0"
     
     # Real-time Streams Settings
     IOT_BROKER_URL: Optional[str] = None
@@ -77,13 +96,16 @@ class Settings(BaseSettings):
     RABBITMQ_PASSWORD: str = "guest"
     
     # Optimization Settings
-    DEFAULT_SOLVER: str = "PULP_CBC_CMD"
+    DEFAULT_SOLVER: str = "cbc"
+    SOLVER_TIME_LIMIT_SECONDS: int = 600
+    SOLVER_MIP_GAP: float = 0.01
     DEFAULT_TIME_LIMIT: int = 600
     DEFAULT_MIP_GAP: float = 0.01
     
     class Config:
         env_file = ".env"
         case_sensitive = True
+        extra = "allow"  # Allow extra fields from .env file
 
 
 def get_settings() -> Settings:

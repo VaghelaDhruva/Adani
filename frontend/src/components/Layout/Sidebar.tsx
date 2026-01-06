@@ -3,12 +3,15 @@ import { Layout, Menu } from 'antd';
 import { useNavigate, useLocation } from 'react-router-dom';
 import {
   DashboardOutlined,
-  CheckCircleOutlined,
-  PlayCircleOutlined,
-  BarChartOutlined,
-  SwapOutlined,
-  SettingOutlined,
-  HeartOutlined
+  CarOutlined,
+  ShoppingCartOutlined,
+  InboxOutlined,
+  TruckOutlined,
+  LoadingOutlined,
+  EnvironmentOutlined,
+  CheckSquareOutlined,
+  DollarOutlined,
+  CheckCircleOutlined
 } from '@ant-design/icons';
 
 const { Sider } = Layout;
@@ -19,39 +22,64 @@ const Sidebar = () => {
 
   const menuItems = [
     {
+      key: 'core',
+      label: 'Core Dashboards',
+      type: 'group' as const,
+    },
+    {
       key: '/dashboard',
       icon: <DashboardOutlined />,
       label: 'KPI Dashboard',
     },
     {
-      key: '/data-health',
-      icon: <HeartOutlined />,
-      label: 'Data Health',
+      key: '/transport',
+      icon: <CarOutlined />,
+      label: 'Transport Mode Selection',
     },
     {
-      key: '/data-validation',
+      key: 'workflow',
+      label: 'Clinker Workflow',
+      type: 'group' as const,
+    },
+    {
+      key: '/clinker/orders',
+      icon: <ShoppingCartOutlined />,
+      label: 'Order & Demand Creation',
+    },
+    {
+      key: '/clinker/approval',
       icon: <CheckCircleOutlined />,
-      label: 'Data Validation',
+      label: 'Demand Approval',
     },
     {
-      key: '/optimization',
-      icon: <PlayCircleOutlined />,
-      label: 'Optimization Console',
+      key: '/clinker/inventory',
+      icon: <InboxOutlined />,
+      label: 'Inventory & Availability',
     },
     {
-      key: '/results',
-      icon: <BarChartOutlined />,
-      label: 'Results Dashboard',
+      key: '/clinker/dispatch',
+      icon: <TruckOutlined />,
+      label: 'Dispatch Planning',
     },
     {
-      key: '/scenarios',
-      icon: <SwapOutlined />,
-      label: 'Scenario Comparison',
+      key: '/clinker/loading',
+      icon: <LoadingOutlined />,
+      label: 'Loading & Dispatch',
     },
     {
-      key: '/system',
-      icon: <SettingOutlined />,
-      label: 'System Health',
+      key: '/clinker/tracking',
+      icon: <EnvironmentOutlined />,
+      label: 'In-Transit Tracking',
+    },
+    {
+      key: '/clinker/delivery',
+      icon: <CheckSquareOutlined />,
+      label: 'Delivery & GRN',
+    },
+    {
+      key: '/clinker/billing',
+      icon: <DollarOutlined />,
+      label: 'Billing & Costing',
     },
   ];
 
@@ -61,7 +89,7 @@ const Sidebar = () => {
 
   return (
     <Sider
-      width={250}
+      width={280}
       style={{
         background: 'linear-gradient(180deg, #1f4e79 0%, #1565c0 35%, #42a5f5 70%, #64b5f6 100%)',
         boxShadow: '4px 0 16px rgba(31, 78, 121, 0.25)',
@@ -83,7 +111,7 @@ const Sidebar = () => {
           background: 'rgba(255, 255, 255, 0.05)',
         }}
       >
-        Adani
+        Clinker System
       </div>
       <Menu
         mode="inline"

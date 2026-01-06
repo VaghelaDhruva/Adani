@@ -7,7 +7,8 @@ from app.core.deps import get_db
 from app.core.config import get_settings
 from app.core.security import verify_password, create_access_token, verify_token
 from app.schemas.auth import Token, UserCreate, User
-from app.core.rbac import Role
+# Role is in app.db.models.user, not app.core.rbac
+# from app.core.rbac import Role  # Removed - not needed here
 
 router = APIRouter()
 settings = get_settings()

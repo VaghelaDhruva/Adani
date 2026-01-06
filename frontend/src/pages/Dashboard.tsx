@@ -13,6 +13,7 @@ import CostBreakdownChart from '../components/Charts/CostBreakdownChart';
 import ProductionUtilizationChart from '../components/Charts/ProductionUtilizationChart';
 import ServiceMetricsChart from '../components/Charts/ServiceMetricsChart';
 import TransportUtilizationTable from '../components/Tables/TransportUtilizationTable';
+import { formatIndianCurrency, formatIndianNumber } from '../utils/numberFormat';
 
 const { Title, Text } = Typography;
 
@@ -37,17 +38,6 @@ const Dashboard = () => {
       refetchInterval: 30000, // Refresh every 30 seconds
     }
   );
-
-  const formatCurrency = (value: number) => {
-    if (value >= 10000000) {
-      return `₹${(value / 10000000).toFixed(2)} Cr`;
-    } else if (value >= 100000) {
-      return `₹${(value / 100000).toFixed(2)} L`;
-    } else if (value >= 1000) {
-      return `₹${(value / 1000).toFixed(2)} K`;
-    }
-    return `₹${value.toFixed(2)}`;
-  };
 
   const formatPercentage = (value: number) => {
     return `${(value * 100).toFixed(1)}%`;
@@ -115,7 +105,7 @@ const Dashboard = () => {
                 <Statistic
                   title="Total Cost"
                   value={kpiData?.total_cost || 0}
-                  formatter={(value) => formatCurrency(Number(value))}
+                  formatter={(value) => formatIndianCurrency(Number(value))}
                   prefix={<DollarOutlined style={{ color: '#1f4e79' }} />}
                   valueStyle={{ color: '#1f4e79' }}
                 />

@@ -50,12 +50,15 @@ def create_database_engine():
             # PHASE 6: Enable foreign key constraints
             cursor.execute("PRAGMA foreign_keys=ON")
             
-            # Performance optimizations
-            cursor.execute("PRAGMA journal_mode=WAL")  # Write-Ahead Logging
-            cursor.execute("PRAGMA synchronous=NORMAL")  # Balance safety and speed
-            cursor.execute("PRAGMA cache_size=10000")  # 10MB cache
+            # Performance optimizations - Production Ready
+            cursor.execute("PRAGMA journal_mode=WAL")  # Write-Ahead Logging (enables concurrent reads)
+            cursor.execute("PRAGMA synchronous=NORMAL")  # Balance safety and speed (WAL allows NORMAL)
+            cursor.execute("PRAGMA cache_size=-64000")  # 64MB cache (negative = KB, positive = pages)
             cursor.execute("PRAGMA temp_store=MEMORY")  # Store temp tables in memory
             cursor.execute("PRAGMA mmap_size=268435456")  # 256MB memory-mapped I/O
+            cursor.execute("PRAGMA page_size=4096")  # 4KB page size (optimal for most systems)
+            cursor.execute("PRAGMA optimize")  # Run optimization analysis
+            cursor.execute("PRAGMA busy_timeout=30000")  # 30 second busy timeout
             
             cursor.close()
             logger.info("SQLite pragmas configured: foreign_keys=ON, WAL mode enabled")
